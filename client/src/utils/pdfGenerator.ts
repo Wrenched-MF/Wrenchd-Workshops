@@ -43,21 +43,28 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
     
     const response = await pdfRes.json();
     const settings = await settingsRes.json();
-    const activeTemplate = await templateRes.json();
+    const templateResponse = await templateRes.json();
     
     console.log('PDF response:', response);
     console.log('Business settings:', settings);
-    console.log('Active template for', templateType, ':', activeTemplate);
+    console.log('Template response for', templateType, ':', templateResponse);
     
     // Use active template settings if available, otherwise fall back to business settings
+    const activeTemplate = templateResponse && templateResponse.id ? templateResponse : null;
     const templateSettings = activeTemplate || settings;
     
+    console.log('Using template:', activeTemplate ? 'Custom template' : 'Business settings');
+    console.log('Template name:', activeTemplate?.templateName || 'Default');
+    
     console.log('Final template settings:', {
+      source: activeTemplate ? 'Custom Template' : 'Business Settings',
+      templateName: activeTemplate?.templateName || 'Default',
+      companyName: templateSettings.companyName || templateSettings.businessName,
       headerColor: templateSettings.headerColor || templateSettings.primaryColor,
       accentColor: templateSettings.accentColor || templateSettings.secondaryColor,
       headerFontSize: templateSettings.headerFontSize,
       fontSize: templateSettings.fontSize,
-      showLogo: templateSettings.showLogo,
+      showLogo: templateSettings.showLogo || templateSettings.showCompanyLogo,
       logoPosition: templateSettings.logoPosition,
       headerLayout: templateSettings.headerLayout,
       footerText: templateSettings.footerText,
@@ -76,9 +83,10 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       const accentColor = hexToRgb(templateSettings.accentColor || templateSettings.secondaryColor || '#22c55e');
       const headerFontSize = templateSettings.headerFontSize || 20;
       const fontSize = templateSettings.fontSize || 12;
-      const showLogo = templateSettings.showLogo !== false;
+      const showLogo = (templateSettings.showLogo || templateSettings.showCompanyLogo) !== false;
       const logoPosition = templateSettings.logoPosition || 'left';
       const headerLayout = templateSettings.headerLayout || 'standard';
+      const companyName = templateSettings.companyName || templateSettings.businessName || "WRENCH'D Auto Repairs";
       
       console.log('Applied settings:', {
         headerColor: `rgb(${headerColor.r}, ${headerColor.g}, ${headerColor.b})`,
@@ -93,20 +101,21 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       let yPosition = 15;
       let logoWidth = 0;
       
-      // Add logo if enabled and available
-      if (showLogo && settings.logoUrl) {
+      // Add logo if enabled and available (use template logo or fallback to business logo)
+      const logoUrl = templateSettings.logoUrl || settings.logoUrl;
+      if (showLogo && logoUrl) {
         try {
-          const img = await loadImageFromDataUrl(settings.logoUrl);
+          const img = await loadImageFromDataUrl(logoUrl);
           const aspectRatio = img.width / img.height;
           logoWidth = 30;
           const logoHeight = logoWidth / aspectRatio;
           
           if (logoPosition === 'center') {
-            doc.addImage(settings.logoUrl, 'JPEG', 105 - logoWidth/2, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 105 - logoWidth/2, yPosition, logoWidth, logoHeight);
           } else if (logoPosition === 'right') {
-            doc.addImage(settings.logoUrl, 'JPEG', 195 - logoWidth, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 195 - logoWidth, yPosition, logoWidth, logoHeight);
           } else {
-            doc.addImage(settings.logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
           }
           
           yPosition += logoHeight + 5;
@@ -121,8 +130,8 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
         doc.setFontSize(headerFontSize);
         doc.setFont('helvetica', 'bold');
-        const wrenchdWidth = doc.getTextWidth('WRENCH\'D');
-        doc.text('WRENCH\'D', 105 - wrenchdWidth/2, yPosition);
+        const companyWidth = doc.getTextWidth(companyName);
+        doc.text(companyName, 105 - companyWidth/2, yPosition);
         yPosition += 10;
         
         doc.setFontSize(headerFontSize * 0.7);
@@ -132,25 +141,27 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text('AUTO REPAIRS', 105 - autoWidth/2, yPosition);
         yPosition += 15;
         
-        // Company details centered
+        // Company details centered (use template data or fallback)
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
-        doc.text('Mobile Mechanic Services | Phone: 07123 456789', 105, yPosition, { align: 'center' });
+        const phone = templateSettings.phone || settings.businessPhone || '07123 456789';
+        const email = templateSettings.email || settings.businessEmail || 'info@wrenchd.com';
+        doc.text(`Mobile Mechanic Services | Phone: ${phone}`, 105, yPosition, { align: 'center' });
         yPosition += 5;
-        doc.text('Email: info@wrenchd.com | Website: www.wrenchd.co.uk', 105, yPosition, { align: 'center' });
+        doc.text(`Email: ${email}`, 105, yPosition, { align: 'center' });
         yPosition += 10;
       } else {
         // Standard or split layout
         let headerX = 15;
-        if (logoPosition === 'left' && showLogo && settings.logoUrl) {
+        if (logoPosition === 'left' && showLogo && logoUrl) {
           headerX = 15 + logoWidth + 10;
         }
         
         doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
         doc.setFontSize(headerFontSize);
         doc.setFont('helvetica', 'bold');
-        doc.text('WRENCH\'D', headerX, yPosition);
+        doc.text(companyName, headerX, yPosition);
         yPosition += 10;
         
         doc.setFontSize(headerFontSize * 0.7);
@@ -158,15 +169,16 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.setFont('helvetica', 'bold');
         doc.text('AUTO REPAIRS', headerX, yPosition);
         
-        // Company details (right side unless centered)
+        // Company details (right side unless centered) - use template data or fallback
         if (headerLayout !== 'centered') {
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           doc.setFont('helvetica', 'normal');
+          const phone = templateSettings.phone || settings.businessPhone || '07123 456789';
+          const email = templateSettings.email || settings.businessEmail || 'info@wrenchd.com';
           doc.text('Mobile Mechanic Services', 140, 15);
-          doc.text('Phone: 07123 456789', 140, 20);
-          doc.text('Email: info@wrenchd.com', 140, 25);
-          doc.text('Website: www.wrenchd.co.uk', 140, 30);
+          doc.text(`Phone: ${phone}`, 140, 20);
+          doc.text(`Email: ${email}`, 140, 25);
         }
         
         yPosition = Math.max(yPosition + 5, 35);
@@ -411,25 +423,28 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(splitNotes, 15, yPosition);
       }
       
-      // Add custom footer if specified
+      // Add custom footer if specified (use template footer or fallback)
       const pageHeight = doc.internal.pageSize.height;
       yPosition = pageHeight - 30;
       
-      if (settings.footerText) {
+      const footerText = templateSettings.footerText || settings.footerText;
+      if (footerText) {
         doc.setFontSize(fontSize - 2);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text(settings.footerText, 105, yPosition, { align: 'center' });
+        doc.text(footerText, 105, yPosition, { align: 'center' });
         yPosition += 5;
       }
       
-      // Default footer
+      // Default footer with template company name
       doc.setFontSize(fontSize - 4);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text('Thank you for choosing WRENCH\'D for your automotive needs!', 105, yPosition, { align: 'center' });
+      const phone = templateSettings.phone || settings.businessPhone || '07123 456789';
+      const email = templateSettings.email || settings.businessEmail || 'info@wrenchd.com';
+      doc.text(`Thank you for choosing ${companyName} for your automotive needs!`, 105, yPosition, { align: 'center' });
       yPosition += 5;
-      doc.text('For support, contact us at info@wrenchd.com or call 07123 456789', 105, yPosition, { align: 'center' });
+      doc.text(`For support, contact us at ${email} or call ${phone}`, 105, yPosition, { align: 'center' });
       
       // Download the PDF
       const downloadFileName = fileName || `WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`;
