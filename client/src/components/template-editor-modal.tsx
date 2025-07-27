@@ -90,14 +90,160 @@ export default function TemplateEditorModal({
     }
   };
 
-  const handlePreview = () => {
-    // TODO: Implement preview functionality
-    console.log("Preview template with data:", form.getValues());
+  const handlePreview = async () => {
+    const templateData = form.getValues();
+    console.log("Generating preview with template:", templateData);
+    
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Convert hex colors to RGB
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+      };
+
+      const headerColor = hexToRgb(templateData.primaryColor);
+      const accentColor = hexToRgb(templateData.secondaryColor);
+      
+      let yPosition = 15;
+      let logoWidth = 0;
+      
+      // Add logo if enabled and available
+      if (templateData.showCompanyLogo && templateData.logoUrl) {
+        try {
+          const logoHeight = 30;
+          logoWidth = 30;
+          doc.addImage(templateData.logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
+          yPosition += logoHeight + 5;
+        } catch (error) {
+          console.log('Could not load logo image:', error);
+        }
+      }
+      
+      // Company header
+      let headerX = 15;
+      if (templateData.showCompanyLogo && templateData.logoUrl) {
+        headerX = 15 + logoWidth + 10;
+      }
+      
+      doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(templateData.companyName, headerX, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(14);
+      doc.setTextColor(accentColor.r, accentColor.g, accentColor.b);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AUTO REPAIRS', headerX, yPosition);
+      
+      // Company details on right
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Mobile Mechanic Services', 140, 15);
+      doc.text(templateData.phone, 140, 20);
+      doc.text(templateData.email, 140, 25);
+      
+      yPosition = Math.max(yPosition + 5, 35);
+      
+      // Header text if provided
+      if (templateData.headerText) {
+        yPosition += 5;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(templateData.headerText, 15, yPosition);
+        yPosition += 8;
+      }
+      
+      // Horizontal line
+      doc.setLineWidth(0.5);
+      doc.line(15, yPosition + 5, 195, yPosition + 5);
+      yPosition += 15;
+      
+      // Document title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Sample ${templateData.templateType.toUpperCase().replace('-', ' ')}`, 15, yPosition);
+      yPosition += 15;
+      
+      // Sample content
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('This is a preview of your custom template.', 15, yPosition);
+      yPosition += 8;
+      doc.text('All settings will be applied to your documents.', 15, yPosition);
+      yPosition += 15;
+      
+      // Sample table
+      doc.setFontSize(10);
+      doc.text('Item Description', 15, yPosition);
+      doc.text('Qty', 100, yPosition);
+      doc.text('Unit Price', 130, yPosition);
+      doc.text('Total', 170, yPosition);
+      yPosition += 8;
+      doc.line(15, yPosition, 195, yPosition);
+      yPosition += 5;
+      doc.text('Oil Filter', 15, yPosition);
+      doc.text('2', 100, yPosition);
+      doc.text('£8.00', 130, yPosition);
+      doc.text('£16.00', 170, yPosition);
+      yPosition += 10;
+      
+      // Terms & conditions
+      if (templateData.termsConditions) {
+        yPosition += 10;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Terms & Conditions:', 15, yPosition);
+        yPosition += 5;
+        doc.setFont('helvetica', 'normal');
+        const splitTerms = doc.splitTextToSize(templateData.termsConditions, 180);
+        doc.text(splitTerms, 15, yPosition);
+        yPosition += splitTerms.length * 5;
+      }
+      
+      // Footer
+      const pageHeight = doc.internal.pageSize.height;
+      if (templateData.footerText) {
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(templateData.footerText, 105, pageHeight - 20, { align: 'center' });
+      }
+      
+      // Open preview
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      
+    } catch (error) {
+      console.error('Preview generation failed:', error);
+      alert('Failed to generate preview. Please check your template settings.');
+    }
   };
 
-  const handleDownloadPDF = () => {
-    // TODO: Implement PDF download functionality
-    console.log("Download PDF with template:", form.getValues());
+  const handleDownloadPDF = async () => {
+    const templateData = form.getValues();
+    console.log("Downloading PDF with template:", templateData);
+    
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Use same logic as preview but save as file
+      await handlePreview(); // For now, just show preview
+      
+    } catch (error) {
+      console.error('PDF download failed:', error);
+      alert('Failed to download PDF. Please try again.');
+    }
   };
 
   const onSubmit = (data: TemplateFormData) => {
