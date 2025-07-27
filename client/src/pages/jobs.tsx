@@ -23,6 +23,7 @@ export default function Jobs() {
     mutationFn: (data: any) => apiRequest("POST", "/api/jobs", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
       setShowAddForm(false);
     },
   });
@@ -32,6 +33,7 @@ export default function Jobs() {
       apiRequest("PUT", `/api/jobs/${id}`, data),
     onSuccess: (updatedJob: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
       
       // Auto-generate receipt PDF when job is completed
       if (updatedJob && updatedJob.status === 'completed') {
