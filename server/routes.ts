@@ -533,7 +533,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/receipts", async (req, res) => {
     try {
       const receipts = await storage.getReceipts();
-      res.json(receipts);
+      // Also include approved purchase orders and returns as downloadable documents
+      const approvedPurchaseOrders = await storage.getPurchaseOrders();
+      const approvedReturns = await storage.getReturns();
+      
+      const pdfDocuments = [
+        ...approvedPurchaseOrders
+          .filter(order => order.status === 'approved')
+          .map(order => ({
+            id: order.id,
+            type: 'purchase-order',
+            title: `Purchase Order ${order.orderNumber}`,
+            date: order.orderDate,
+            amount: order.total,
+            supplier: order.supplier?.name || 'Unknown',
+            description: `Purchase order for ${order.items?.length || 0} items`
+          })),
+        ...approvedReturns
+          .filter(returnItem => returnItem.status === 'approved')
+          .map(returnItem => ({
+            id: returnItem.id,
+            type: 'return',
+            title: `Return ${returnItem.returnNumber}`,
+            date: returnItem.returnDate,
+            amount: returnItem.refundAmount,
+            supplier: returnItem.supplier?.name || 'Unknown',
+            description: `Return for ${returnItem.items?.length || 0} items`
+          }))
+      ];
+      
+      res.json({ receipts, pdfDocuments });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch receipts" });
     }

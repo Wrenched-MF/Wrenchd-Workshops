@@ -100,10 +100,21 @@ export default function Suppliers() {
         // Load and add logo
         const logoImg = new Image();
         logoImg.crossOrigin = 'anonymous';
+        logoImg.onerror = () => {
+          // If logo fails to load, continue without it
+          generatePDFContent();
+        };
         logoImg.onload = () => {
-          // Header section with logo and company info
-          doc.addImage(logoImg, 'PNG', 15, 10, 40, 25);
-          
+          // Add logo to PDF
+          try {
+            doc.addImage(logoImg, 'PNG', 15, 10, 40, 25);
+          } catch (e) {
+            console.warn('Could not add logo to PDF:', e);
+          }
+          generatePDFContent();
+        };
+
+        const generatePDFContent = () => {
           // Company details (right side)
           doc.setFontSize(10);
           doc.setFont('helvetica', 'normal');
@@ -238,9 +249,8 @@ export default function Suppliers() {
           doc.save(`WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`);
         };
         
-        
-        // Set logo source - using the attached logo
-        logoImg.src = '/attached_assets/logo_1753637442289.png';
+        // Generate PDF without logo for now
+        generatePDFContent();
       }
     } catch (error) {
       console.error('PDF generation failed:', error);
