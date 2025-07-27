@@ -22,14 +22,6 @@ const purchaseOrderSchema = z.object({
   orderDate: z.string().optional(),
   expectedDelivery: z.string().optional(),
   notes: z.string().optional(),
-  items: z.array(z.object({
-    inventoryItemId: z.string().optional(),
-    itemName: z.string().min(1, "Item name is required"),
-    itemDescription: z.string().optional(),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
-    unitPrice: z.number().min(0, "Unit price must be 0 or greater"),
-    totalPrice: z.number().min(0),
-  })).min(1, "At least one item is required"),
 });
 
 type PurchaseOrderFormData = z.infer<typeof purchaseOrderSchema>;
@@ -53,8 +45,7 @@ export default function PurchaseOrderForm({
     { inventoryItemId: "", itemName: "", itemDescription: "", quantity: 1, unitPrice: 0, totalPrice: 0 }
   ]);
 
-  const form = useForm<PurchaseOrderFormData>({
-    resolver: zodResolver(purchaseOrderSchema),
+  const form = useForm({
     defaultValues: {
       supplierId: "",
       orderNumber: `PO-${Date.now()}`,
@@ -62,7 +53,6 @@ export default function PurchaseOrderForm({
       orderDate: new Date().toISOString(),
       expectedDelivery: "",
       notes: "",
-      items: orderItems,
       ...initialData,
     },
   });
@@ -125,21 +115,25 @@ export default function PurchaseOrderForm({
     }
   };
 
-  const handleSubmit = (data: PurchaseOrderFormData) => {
+  const handleSubmit = (data: any) => {
     const subtotal = calculateSubtotal();
     const tax = calculateTax(subtotal);
     const total = calculateTotal();
 
     const formattedData = {
-      ...data,
-      orderDate: data.orderDate ? new Date(data.orderDate) : new Date(),
-      expectedDelivery: data.expectedDelivery ? new Date(data.expectedDelivery) : null,
+      supplierId: data.supplierId,
+      orderNumber: data.orderNumber,
+      status: data.status || "pending",
+      orderDate: data.orderDate ? data.orderDate : new Date().toISOString(),
+      expectedDelivery: data.expectedDelivery || null,
       subtotal: subtotal.toString(),
       tax: tax.toString(),
       total: total.toString(),
+      notes: data.notes || null,
       items: orderItems,
     };
 
+    console.log("Submitting purchase order data:", formattedData);
     onSubmit(formattedData);
   };
 

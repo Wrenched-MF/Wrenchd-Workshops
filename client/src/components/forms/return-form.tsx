@@ -18,14 +18,6 @@ const returnSchema = z.object({
   status: z.string().default("pending"),
   reason: z.string().min(1, "Reason for return is required"),
   notes: z.string().optional(),
-  items: z.array(z.object({
-    inventoryItemId: z.string().optional(),
-    itemName: z.string().min(1, "Item name is required"),
-    quantity: z.number().min(1, "Quantity must be at least 1"),
-    unitPrice: z.number().min(0, "Unit price must be 0 or greater"),
-    totalPrice: z.number().min(0),
-    condition: z.string().min(1, "Condition is required"),
-  })).min(1, "At least one item is required"),
 });
 
 type ReturnFormData = z.infer<typeof returnSchema>;
@@ -51,8 +43,7 @@ export default function ReturnForm({
     { inventoryItemId: "", itemName: "", quantity: 1, unitPrice: 0, totalPrice: 0, condition: "new" }
   ]);
 
-  const form = useForm<ReturnFormData>({
-    resolver: zodResolver(returnSchema),
+  const form = useForm({
     defaultValues: {
       supplierId: "",
       purchaseOrderId: "",
@@ -60,7 +51,6 @@ export default function ReturnForm({
       status: "pending",
       reason: "",
       notes: "",
-      items: returnItems,
       ...initialData,
     },
   });
@@ -115,15 +105,21 @@ export default function ReturnForm({
     }
   };
 
-  const handleSubmit = (data: ReturnFormData) => {
+  const handleSubmit = (data: any) => {
     const refundAmount = calculateRefundAmount();
 
     const formattedData = {
-      ...data,
+      supplierId: data.supplierId,
+      purchaseOrderId: data.purchaseOrderId || null,
+      returnNumber: data.returnNumber,
+      status: data.status || "pending",
+      reason: data.reason,
       refundAmount: refundAmount.toString(),
+      notes: data.notes || null,
       items: returnItems,
     };
 
+    console.log("Submitting return data:", formattedData);
     onSubmit(formattedData);
   };
 

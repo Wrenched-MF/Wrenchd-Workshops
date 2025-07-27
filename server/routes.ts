@@ -311,11 +311,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/purchase-orders", async (req, res) => {
     try {
-      const validatedData = insertPurchaseOrderSchema.parse(req.body);
-      const order = await storage.createPurchaseOrder(validatedData);
+      console.log("Purchase order request body:", JSON.stringify(req.body, null, 2));
+      
+      // Extract the items from the request to handle separately
+      const { items, ...orderData } = req.body;
+      
+      // Validate the main order data
+      const validatedOrderData = insertPurchaseOrderSchema.parse(orderData);
+      
+      // Create the purchase order first
+      const order = await storage.createPurchaseOrder(validatedOrderData);
+      
+      // Then add the items if they exist
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.addPurchaseOrderItem({
+            purchaseOrderId: order.id,
+            inventoryItemId: item.inventoryItemId || null,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice.toString(),
+            totalPrice: item.totalPrice.toString(),
+          });
+        }
+      }
+      
       res.status(201).json(order);
     } catch (error) {
-      res.status(400).json({ message: "Invalid purchase order data" });
+      console.error("Purchase order creation error:", error);
+      res.status(400).json({ 
+        message: "Invalid purchase order data",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
@@ -362,11 +390,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/returns", async (req, res) => {
     try {
-      const validatedData = insertReturnSchema.parse(req.body);
-      const returnItem = await storage.createReturn(validatedData);
+      console.log("Return request body:", JSON.stringify(req.body, null, 2));
+      
+      // Extract the items from the request to handle separately
+      const { items, ...returnData } = req.body;
+      
+      // Validate the main return data
+      const validatedReturnData = insertReturnSchema.parse(returnData);
+      
+      // Create the return first
+      const returnItem = await storage.createReturn(validatedReturnData);
+      
+      // Then add the items if they exist
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          await storage.addReturnItem({
+            returnId: returnItem.id,
+            inventoryItemId: item.inventoryItemId || null,
+            itemName: item.itemName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice.toString(),
+            totalPrice: item.totalPrice.toString(),
+            condition: item.condition,
+          });
+        }
+      }
+      
       res.status(201).json(returnItem);
     } catch (error) {
-      res.status(400).json({ message: "Invalid return data" });
+      console.error("Return creation error:", error);
+      res.status(400).json({ 
+        message: "Invalid return data",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
