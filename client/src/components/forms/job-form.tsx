@@ -111,6 +111,9 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
     console.log("Form submission data:", data);
     console.log("Form errors:", form.formState.errors);
     
+    // Don't prevent submission based on isValid as it may be false during typing
+    // Instead rely on required field checks and server validation
+    
     // Check for required fields
     if (!data.customerId) {
       console.error("Missing customer ID");
@@ -154,7 +157,13 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form 
+        onSubmit={(e) => {
+          console.log("Form onSubmit triggered");
+          form.handleSubmit(handleSubmit)(e);
+        }} 
+        className="space-y-4"
+      >
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -516,7 +525,19 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
         />
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button type="submit" disabled={isSubmitting} className="bg-wrench-green hover:bg-wrench-dark">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="bg-wrench-green hover:bg-wrench-dark"
+            onClick={(e) => {
+              console.log("Submit button clicked, form state:", {
+                isValid: form.formState.isValid,
+                isDirty: form.formState.isDirty,
+                errors: form.formState.errors,
+                values: form.getValues()
+              });
+            }}
+          >
             {isSubmitting ? (initialData ? "Updating..." : "Creating...") : (initialData ? "Update Job" : "Create Job")}
           </Button>
         </div>

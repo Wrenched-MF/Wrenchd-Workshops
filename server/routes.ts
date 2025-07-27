@@ -1315,9 +1315,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
-      // Find jobs older than 24 hours
+      // Find jobs older than 24 hours BUT NOT future scheduled jobs
       const oldJobs = jobs.filter(job => {
         const jobDate = new Date(job.createdAt || 0);
+        const scheduledDate = job.scheduledDate ? new Date(job.scheduledDate) : null;
+        
+        // Keep job if it's scheduled for future date (even if created more than 24h ago)
+        if (scheduledDate && scheduledDate > today) {
+          return false;
+        }
+        
         return jobDate < yesterday;
       });
       
