@@ -74,6 +74,7 @@ export default function Suppliers() {
       apiRequest("PUT", `/api/purchase-orders/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     },
   });
 
@@ -82,8 +83,84 @@ export default function Suppliers() {
       apiRequest("PUT", `/api/returns/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/returns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     },
   });
+
+  const generatePDF = async (type: string, id: string) => {
+    try {
+      const response = await apiRequest("POST", "/api/generate-pdf", { type, id });
+      if (response.success) {
+        // Simple PDF generation using jsPDF
+        const { jsPDF } = await import('jspdf');
+        const doc = new jsPDF();
+        
+        const data = response.data;
+        doc.setFontSize(20);
+        doc.text(data.title, 20, 20);
+        
+        doc.setFontSize(12);
+        let yPosition = 40;
+        
+        if (type === 'purchase-order') {
+          doc.text(`Supplier: ${data.supplier}`, 20, yPosition);
+          yPosition += 10;
+          doc.text(`Order Date: ${new Date(data.orderDate).toLocaleDateString()}`, 20, yPosition);
+          yPosition += 10;
+          if (data.expectedDelivery) {
+            doc.text(`Expected Delivery: ${new Date(data.expectedDelivery).toLocaleDateString()}`, 20, yPosition);
+            yPosition += 10;
+          }
+          
+          yPosition += 10;
+          doc.text('Items:', 20, yPosition);
+          yPosition += 10;
+          
+          data.items.forEach((item: any) => {
+            doc.text(`• ${item.itemName} - Qty: ${item.quantity} - £${item.totalPrice}`, 30, yPosition);
+            yPosition += 8;
+          });
+          
+          yPosition += 10;
+          doc.text(`Subtotal: £${data.subtotal}`, 20, yPosition);
+          yPosition += 8;
+          doc.text(`Tax: £${data.tax}`, 20, yPosition);
+          yPosition += 8;
+          doc.setFont(undefined, 'bold');
+          doc.text(`Total: £${data.total}`, 20, yPosition);
+        } else {
+          doc.text(`Supplier: ${data.supplier}`, 20, yPosition);
+          yPosition += 10;
+          doc.text(`Return Date: ${new Date(data.returnDate).toLocaleDateString()}`, 20, yPosition);
+          yPosition += 10;
+          doc.text(`Reason: ${data.reason}`, 20, yPosition);
+          yPosition += 20;
+          
+          doc.text('Items:', 20, yPosition);
+          yPosition += 10;
+          
+          data.items.forEach((item: any) => {
+            doc.text(`• ${item.itemName} - Qty: ${item.quantity} - £${item.totalPrice}`, 30, yPosition);
+            yPosition += 8;
+          });
+          
+          yPosition += 10;
+          doc.setFont(undefined, 'bold');
+          doc.text(`Refund Amount: £${data.refundAmount}`, 20, yPosition);
+        }
+        
+        if (data.notes) {
+          yPosition += 20;
+          doc.setFont(undefined, 'normal');
+          doc.text(`Notes: ${data.notes}`, 20, yPosition);
+        }
+        
+        doc.save(`${data.title.replace(/\s+/g, '_')}.pdf`);
+      }
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+    }
+  };
 
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -281,7 +358,11 @@ export default function Suppliers() {
                               </Button>
                             )}
                             {order.status === 'approved' && (
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => generatePDF('purchase-order', order.id)}
+                              >
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF
                               </Button>
@@ -381,7 +462,11 @@ export default function Suppliers() {
                               </Button>
                             )}
                             {returnItem.status === 'approved' && (
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => generatePDF('return', returnItem.id)}
+                              >
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF
                               </Button>

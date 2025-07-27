@@ -353,8 +353,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertPurchaseOrderSchema.partial().parse(req.body);
       const order = await storage.updatePurchaseOrder(req.params.id, validatedData);
+      
+      // If status changed to approved, update inventory stock
+      if (validatedData.status === 'approved') {
+        const orderDetails = await storage.getPurchaseOrder(req.params.id);
+        if (orderDetails && orderDetails.items) {
+          for (const item of orderDetails.items) {
+            if (item.inventoryItemId) {
+              await storage.updateInventoryStock(item.inventoryItemId, item.quantity);
+            }
+          }
+        }
+      }
+      
       res.json(order);
     } catch (error) {
+      console.error("Purchase order update error:", error);
       res.status(400).json({ message: "Failed to update purchase order" });
     }
   });
@@ -434,8 +448,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertReturnSchema.partial().parse(req.body);
       const returnItem = await storage.updateReturn(req.params.id, validatedData);
+      
+      // If status changed to approved, reduce inventory stock
+      if (validatedData.status === 'approved') {
+        const returnDetails = await storage.getReturn(req.params.id);
+        if (returnDetails && returnDetails.items) {
+          for (const item of returnDetails.items) {
+            if (item.inventoryItemId) {
+              await storage.updateInventoryStock(item.inventoryItemId, -item.quantity);
+            }
+          }
+        }
+      }
+      
       res.json(returnItem);
     } catch (error) {
+      console.error("Return update error:", error);
       res.status(400).json({ message: "Failed to update return" });
     }
   });
@@ -446,6 +474,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete return" });
+    }
+  });
+
+  // PDF Generation
+  app.post("/api/generate-pdf", async (req, res) => {
+    try {
+      const { type, id } = req.body;
+      
+      if (type === 'purchase-order') {
+        const order = await storage.getPurchaseOrder(id);
+        if (!order) {
+          return res.status(404).json({ message: "Purchase order not found" });
+        }
+        
+        // Generate PDF content
+        const pdfContent = {
+          title: `Purchase Order ${order.orderNumber}`,
+          supplier: order.supplier.name,
+          orderDate: order.orderDate,
+          expectedDelivery: order.expectedDelivery,
+          items: order.items,
+          subtotal: order.subtotal,
+          tax: order.tax,
+          total: order.total,
+          notes: order.notes
+        };
+        
+        res.json({ success: true, data: pdfContent });
+      } else if (type === 'return') {
+        const returnItem = await storage.getReturn(id);
+        if (!returnItem) {
+          return res.status(404).json({ message: "Return not found" });
+        }
+        
+        // Generate PDF content
+        const pdfContent = {
+          title: `Return ${returnItem.returnNumber}`,
+          supplier: returnItem.supplier.name,
+          returnDate: returnItem.returnDate,
+          reason: returnItem.reason,
+          items: returnItem.items,
+          refundAmount: returnItem.refundAmount,
+          notes: returnItem.notes
+        };
+        
+        res.json({ success: true, data: pdfContent });
+      } else {
+        res.status(400).json({ message: "Invalid PDF type" });
+      }
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 

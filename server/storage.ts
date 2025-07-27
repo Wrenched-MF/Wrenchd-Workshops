@@ -277,6 +277,21 @@ export class DatabaseStorage implements IStorage {
     return item;
   }
 
+  async updateInventoryStock(id: string, quantityChange: number): Promise<InventoryItem> {
+    const currentItem = await this.getInventoryItem(id);
+    if (!currentItem) throw new Error("Inventory item not found");
+    
+    const newQuantity = (currentItem.quantity || 0) + quantityChange;
+    
+    const [item] = await db
+      .update(inventoryItems)
+      .set({ quantity: newQuantity })
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    if (!item) throw new Error("Failed to update inventory stock");
+    return item;
+  }
+
   async deleteInventoryItem(id: string): Promise<void> {
     await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
   }
