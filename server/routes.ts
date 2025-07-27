@@ -849,28 +849,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Quote not found" });
         }
         
+        // Calculate totals properly for quotes
+        const laborTotal = quote.laborHours && quote.laborRate ? 
+          (parseFloat(quote.laborHours) * parseFloat(quote.laborRate)).toFixed(2) : '0.00';
+        const partsTotal = quote.partsTotal || '0.00';
+        const subtotal = (parseFloat(laborTotal) + parseFloat(partsTotal)).toFixed(2);
+        const vatRate = 20; // UK standard VAT rate
+        const vatAmount = (parseFloat(subtotal) * 0.20).toFixed(2);
+        const finalTotal = (parseFloat(subtotal) + parseFloat(vatAmount)).toFixed(2);
+
         const pdfContent = {
+          // Document Information
           title: `${quote.quoteNumber || `Quote ${quote.id.slice(0, 8)}`} - ${quote.title || 'Service'}`,
-          customer: quote.customer?.name || 'Unknown',
+          documentType: 'QUOTE',
+          quoteNumber: quote.quoteNumber || `QTE-${quote.id.slice(0, 8)}`,
+          date: new Date(quote.createdAt || Date.now()).toLocaleDateString('en-GB'),
+          validUntil: quote.validUntil ? new Date(quote.validUntil).toLocaleDateString('en-GB') : 
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'), // 30 days from now
+          
+          // Customer Information
+          customer: quote.customer?.name || 'Unknown Customer',
           customerPhone: quote.customer?.phone || '',
           customerEmail: quote.customer?.email || '',
           customerAddress: quote.customer?.address || '',
-          vehicle: `${quote.vehicle?.year} ${quote.vehicle?.make} ${quote.vehicle?.model}`,
-          vehiclePlate: quote.vehicle?.licensePlate || '',
-          vehicleMileage: quote.vehicle?.mileage || '',
+          
+          // Vehicle Information
+          vehicle: quote.vehicle ? `${quote.vehicle.year} ${quote.vehicle.make} ${quote.vehicle.model}` : '',
+          vehicleRegistration: quote.vehicle?.licensePlate || '',
+          vehicleMake: quote.vehicle?.make || '',
+          vehicleModel: quote.vehicle?.model || '',
+          vehicleYear: quote.vehicle?.year || '',
           vehicleVin: quote.vehicle?.vin || '',
-          quoteDate: quote.createdAt,
-          validUntil: quote.validUntil,
-          laborHours: quote.laborHours,
-          laborRate: quote.laborRate,
-          parts: quote.parts || [],
-          partsTotal: quote.partsTotal,
-          laborTotal: quote.laborTotal,
-          totalAmount: quote.totalAmount,
+          vehicleMileage: quote.vehicle?.mileage || '',
+          
+          // Work Information
+          jobTitle: quote.title || 'Service',
+          jobDescription: quote.description || quote.title || 'Automotive service estimate',
+          jobNumber: quote.jobNumber || '',
+          
+          // Labor Information
+          laborHours: quote.laborHours || '0',
+          laborRate: quote.laborRate || '0.00',
+          laborTotal: laborTotal,
+          
+          // Parts Information
+          parts: quote.parts?.map(part => ({
+            name: part.partName || 'Part',
+            partNumber: part.partNumber || '',
+            description: part.description || part.partName || 'Automotive part',
+            quantity: part.quantity || 1,
+            unitPrice: parseFloat(part.unitPrice || '0').toFixed(2),
+            totalPrice: parseFloat(part.totalPrice || '0').toFixed(2)
+          })) || [],
+          partsTotal: partsTotal,
+          
+          // Financial Calculations
+          subtotal: subtotal,
+          vatRate: vatRate,
+          vatAmount: vatAmount,
+          total: finalTotal,
+          
+          // Additional Information
           notes: quote.notes || '',
-          description: quote.description || quote.title,
-          jobNumber: quote.jobNumber,
-          quoteNumber: quote.quoteNumber
+          status: 'ESTIMATE'
         };
         
         res.json({ success: true, data: pdfContent });
@@ -887,27 +928,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
           job = await storage.getJob(receipt.jobId);
         }
         
+        // Calculate totals properly
+        const laborTotal = job?.laborHours && job?.laborRate ? 
+          (parseFloat(job.laborHours) * parseFloat(job.laborRate)).toFixed(2) : '0.00';
+        const partsTotal = job?.partsTotal || '0.00';
+        const subtotal = (parseFloat(laborTotal) + parseFloat(partsTotal)).toFixed(2);
+        const vatRate = 20; // UK standard VAT rate
+        const vatAmount = (parseFloat(subtotal) * 0.20).toFixed(2);
+        const finalTotal = (parseFloat(subtotal) + parseFloat(vatAmount)).toFixed(2);
+
         const pdfContent = {
+          // Document Information
           title: `Receipt ${receipt.receiptNumber}`,
-          customer: job?.customer?.name || 'Unknown',
+          documentType: 'RECEIPT',
+          receiptNumber: receipt.receiptNumber,
+          date: new Date(receipt.createdAt || Date.now()).toLocaleDateString('en-GB'),
+          
+          // Customer Information
+          customer: job?.customer?.name || 'Unknown Customer',
           customerPhone: job?.customer?.phone || '',
           customerEmail: job?.customer?.email || '',
           customerAddress: job?.customer?.address || '',
+          
+          // Vehicle Information
           vehicle: job?.vehicle ? `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}` : '',
-          vehiclePlate: job?.vehicle?.licensePlate || '',
+          vehicleRegistration: job?.vehicle?.licensePlate || '',
+          vehicleMake: job?.vehicle?.make || '',
+          vehicleModel: job?.vehicle?.model || '',
+          vehicleYear: job?.vehicle?.year || '',
+          vehicleVin: job?.vehicle?.vin || '',
           vehicleMileage: job?.vehicle?.mileage || '',
+          
+          // Work Information
           jobTitle: job?.title || 'Service',
+          jobDescription: job?.description || job?.title || 'Automotive service work',
           jobNumber: job?.jobNumber || '',
-          receiptDate: receipt.createdAt || new Date(),
-          paymentMethod: 'Cash', // Default since not stored in receipt
-          services: [],
-          laborHours: job?.laborHours || '',
-          laborRate: job?.laborRate || '',
-          laborTotal: job?.laborTotal || '',
-          parts: job?.parts || [],
-          partsTotal: job?.partsTotal || '',
-          total: job?.totalAmount || receipt.totalAmount || '0',
-          notes: job?.notes || receipt.notes || ''
+          completedDate: job?.completedDate ? new Date(job.completedDate).toLocaleDateString('en-GB') : '',
+          
+          // Labor Information
+          laborHours: job?.laborHours || '0',
+          laborRate: job?.laborRate || '0.00',
+          laborTotal: laborTotal,
+          
+          // Parts Information
+          parts: job?.parts?.map(part => ({
+            name: part.partName || 'Part',
+            partNumber: part.partNumber || '',
+            description: part.description || part.partName || 'Automotive part',
+            quantity: part.quantity || 1,
+            unitPrice: parseFloat(part.unitPrice || '0').toFixed(2),
+            totalPrice: parseFloat(part.totalPrice || '0').toFixed(2)
+          })) || [],
+          partsTotal: partsTotal,
+          
+          // Financial Calculations
+          subtotal: subtotal,
+          vatRate: vatRate,
+          vatAmount: vatAmount,
+          total: finalTotal,
+          
+          // Additional Information
+          notes: job?.notes || '',
+          paymentMethod: 'Payment due upon completion',
+          status: job?.status === 'completed' ? 'PAID' : 'PENDING'
         };
         
         res.json({ success: true, data: pdfContent });
