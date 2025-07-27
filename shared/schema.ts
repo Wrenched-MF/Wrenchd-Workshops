@@ -425,9 +425,10 @@ export const insertJobSchema = createInsertSchema(jobs).omit({
   id: true,
   jobNumber: true,
   createdAt: true,
+  completedDate: true,
 }).extend({
-  scheduledDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
-  completedDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
+  scheduledDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable().optional(),
+  completedDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable().optional(),
 });
 
 export const insertJobPartSchema = createInsertSchema(jobParts).omit({

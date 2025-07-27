@@ -248,7 +248,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-3 h-3 rounded" 
-                              style={{ backgroundColor: bay.color }}
+                              style={{ backgroundColor: bay.color || "#3B82F6" }}
                             />
                             {bay.name}
                           </div>
