@@ -79,7 +79,7 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
               <FormItem>
                 <FormLabel>Trim</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., LX, Sport, Limited" {...field} />
+                  <Input placeholder="e.g., LX, Sport, Limited" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,7 +139,7 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
               <FormItem>
                 <FormLabel>Color</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Black, Silver, Red" {...field} />
+                  <Input placeholder="e.g., Black, Silver, Red" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -159,7 +159,7 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
                 <FormItem>
                   <FormLabel>VIN</FormLabel>
                   <FormControl>
-                    <Input placeholder="17-character VIN" {...field} />
+                    <Input placeholder="17-character VIN" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,7 +173,7 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
                 <FormItem>
                   <FormLabel>License Plate</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., ABC123" {...field} />
+                    <Input placeholder="e.g., ABC123" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -191,7 +191,8 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
                       type="number" 
                       placeholder="Current mileage" 
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || null)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -208,7 +209,7 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
                 <FormItem>
                   <FormLabel>Engine Size</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 2.0L, 3.5L V6" {...field} />
+                    <Input placeholder="e.g., 2.0L, 3.5L V6" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -276,7 +277,8 @@ export default function VehicleForm({ onSubmit, isSubmitting, initialData }: Veh
                   <Textarea 
                     placeholder="Add any additional notes about this vehicle..." 
                     className="h-24"
-                    {...field} 
+                    {...field}
+                    value={field.value || ""}
                   />
                 </FormControl>
                 <FormMessage />

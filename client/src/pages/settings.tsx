@@ -58,7 +58,7 @@ export default function Settings() {
         logoUrl: businessSettings.logoUrl || "",
       });
     }
-  }, [businessSettings]);
+  }, [businessSettings, form]);
 
   const onSubmit = (data: InsertBusinessSettings) => {
     updateSettingsMutation.mutate(data);
@@ -119,7 +119,7 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Business Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -132,7 +132,7 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Business Phone</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter business phone" {...field} />
+                            <Input placeholder="Enter business phone" {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -148,7 +148,7 @@ export default function Settings() {
                         <FormItem>
                           <FormLabel>Business Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Enter business email" {...field} />
+                            <Input type="email" placeholder="Enter business email" {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -160,7 +160,7 @@ export default function Settings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Currency</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || "GBP"}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue />
@@ -188,7 +188,8 @@ export default function Settings() {
                           <Textarea 
                             placeholder="Enter business address" 
                             className="h-20"
-                            {...field} 
+                            {...field}
+                            value={field.value || ""}
                           />
                         </FormControl>
                         <FormMessage />

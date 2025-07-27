@@ -70,7 +70,7 @@ export default function Inventory() {
   });
 
   // Get unique categories
-  const categories = [...new Set(items.map(item => item.category).filter(Boolean))];
+  const categories = Array.from(new Set(items.map(item => item.category).filter(Boolean)));
 
   if (isLoading) {
     return <div>Loading inventory...</div>;

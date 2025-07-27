@@ -65,11 +65,11 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
   };
 
   const handleSubmit = (data: InsertJob) => {
-    // Ensure dates are properly formatted
+    // Ensure dates are properly formatted as Date objects
     const formattedData = {
       ...data,
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate).toISOString() : null,
-      completedDate: data.completedDate ? new Date(data.completedDate).toISOString() : null,
+      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : null,
+      completedDate: data.completedDate ? new Date(data.completedDate) : null,
     };
     onSubmit(formattedData);
   };
@@ -158,7 +158,8 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                 <Textarea 
                   placeholder="Detailed description of the work to be performed"
                   className="h-20"
-                  {...field} 
+                  {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
@@ -249,6 +250,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                       step="0.25" 
                       placeholder="0.0"
                       {...field}
+                      value={field.value || ""}
                       onChange={(e) => {
                         field.onChange(e);
                         setTimeout(calculateTotals, 0);
@@ -272,6 +274,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                       step="0.01" 
                       placeholder="50.00"
                       {...field}
+                      value={field.value || ""}
                       onChange={(e) => {
                         field.onChange(e);
                         setTimeout(calculateTotals, 0);
@@ -295,6 +298,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                       step="0.01" 
                       placeholder="0.00"
                       {...field}
+                      value={field.value || ""}
                       onChange={(e) => {
                         field.onChange(e);
                         setTimeout(calculateTotals, 0);
@@ -315,7 +319,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                 <FormItem>
                   <FormLabel>Labor Total (£)</FormLabel>
                   <FormControl>
-                    <Input {...field} readOnly className="bg-gray-50" />
+                    <Input {...field} value={field.value || ""} readOnly className="bg-gray-50" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -329,7 +333,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                 <FormItem>
                   <FormLabel>Total Amount (£)</FormLabel>
                   <FormControl>
-                    <Input {...field} readOnly className="bg-gray-50 font-semibold" />
+                    <Input {...field} value={field.value || ""} readOnly className="bg-gray-50 font-semibold" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -348,7 +352,8 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                 <Textarea 
                   placeholder="Additional notes about this job"
                   className="h-16"
-                  {...field} 
+                  {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />

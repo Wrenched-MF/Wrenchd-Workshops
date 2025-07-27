@@ -64,7 +64,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
               <FormItem>
                 <FormLabel>Part Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., OIL123" {...field} />
+                  <Input placeholder="e.g., OIL123" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +79,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Item description" {...field} />
+                <Textarea placeholder="Item description" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -94,7 +94,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
               <FormItem>
                 <FormLabel>Category</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Filters, Oils, Brake Parts" {...field} />
+                  <Input placeholder="e.g., Filters, Oils, Brake Parts" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -142,7 +142,8 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
                       type="number" 
                       step="0.01" 
                       placeholder="0.00" 
-                      {...field} 
+                      {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -161,7 +162,8 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
                       type="number" 
                       step="0.01" 
                       placeholder="0.00" 
-                      {...field} 
+                      {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -182,7 +184,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 mb-4">
                 <FormControl>
                   <Checkbox
-                    checked={field.value}
+                    checked={field.value || false}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
@@ -209,6 +211,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
                         type="number" 
                         placeholder="0" 
                         {...field}
+                        value={field.value || ""}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       />
                     </FormControl>
@@ -228,6 +231,7 @@ export default function InventoryForm({ onSubmit, isSubmitting, initialData }: I
                         type="number" 
                         placeholder="5" 
                         {...field}
+                        value={field.value || ""}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 5)}
                       />
                     </FormControl>

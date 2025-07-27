@@ -49,7 +49,7 @@ export default function CustomerForm({ onSubmit, isSubmitting, initialData }: Cu
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="customer@example.com" {...field} />
+                <Input type="email" placeholder="customer@example.com" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -63,7 +63,7 @@ export default function CustomerForm({ onSubmit, isSubmitting, initialData }: Cu
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input placeholder="Phone number" {...field} />
+                <Input placeholder="Phone number" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -77,7 +77,7 @@ export default function CustomerForm({ onSubmit, isSubmitting, initialData }: Cu
             <FormItem>
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Textarea placeholder="Customer address" {...field} />
+                <Textarea placeholder="Customer address" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -91,7 +91,7 @@ export default function CustomerForm({ onSubmit, isSubmitting, initialData }: Cu
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea placeholder="Additional notes about this customer" {...field} />
+                <Textarea placeholder="Additional notes about this customer" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>

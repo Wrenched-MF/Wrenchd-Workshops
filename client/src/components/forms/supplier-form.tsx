@@ -53,7 +53,7 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
               <FormItem>
                 <FormLabel>Contact Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Primary contact person" {...field} />
+                  <Input placeholder="Primary contact person" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -70,7 +70,7 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Phone number" {...field} />
+                  <Input placeholder="Phone number" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -84,7 +84,7 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="contact@supplier.com" {...field} />
+                  <Input type="email" placeholder="contact@supplier.com" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -99,7 +99,7 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
             <FormItem>
               <FormLabel>Website</FormLabel>
               <FormControl>
-                <Input placeholder="https://supplier.com" {...field} />
+                <Input placeholder="https://supplier.com" {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,7 +116,8 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
                 <Textarea 
                   placeholder="Supplier address" 
                   className="h-20"
-                  {...field} 
+                  {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
@@ -134,7 +135,8 @@ export default function SupplierForm({ onSubmit, isSubmitting, initialData }: Su
                 <Textarea 
                   placeholder="Additional notes about this supplier" 
                   className="h-24"
-                  {...field} 
+                  {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />
