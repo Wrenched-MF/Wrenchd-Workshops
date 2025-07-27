@@ -321,24 +321,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="scheduledEndTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Time</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="time"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div></div> {/* Empty space for better layout */}
         </div>
 
         {/* Parts Selection */}
