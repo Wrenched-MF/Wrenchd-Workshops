@@ -191,6 +191,12 @@ export const businessSettings = pgTable("business_settings", {
   pdfTemplate: text("pdf_template").default("default"),
   headerColor: text("header_color").default("#000000"),
   accentColor: text("accent_color").default("#22c55e"),
+  logoPosition: text("logo_position").default("left"),
+  fontSize: integer("font_size").default(12),
+  headerFontSize: integer("header_font_size").default(20),
+  showLogo: boolean("show_logo").default(true),
+  footerText: text("footer_text"),
+  headerLayout: text("header_layout").default("standard"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
