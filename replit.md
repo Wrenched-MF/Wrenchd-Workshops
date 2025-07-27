@@ -15,10 +15,12 @@ Preferred communication style: Simple, everyday language.
 - Implemented logo upload with drag-and-drop interface and positioning options (left, center, right)
 - Added full customization controls for typography, colors, and layout settings
 - Created 4 header layout options: Standard, Centered, Split, and Compact
-- Fixed PDF generation to apply template settings across ALL document types
-- Template settings now control purchase orders, returns, quotes, and receipts
-- Added custom footer text functionality for professional branding
-- Enhanced PDF generator with proper template fetching and application logic
+- **COMPLETED: Category-based template system** - Each document type uses its own active template
+- **COMPLETED: Template application in PDF generation** - Both preview and download PDFs use custom templates
+- **COMPLETED: Template storage and activation** - Templates save with 50MB body limit for logo support
+- Fixed PDF generation to apply template settings across ALL document types (receipts, quotes, purchase orders, returns)
+- Template settings now properly control logo, company info, colors, fonts, and footer text
+- Enhanced PDF generator with proper template fetching and application logic for both generatePDF and previewPDF functions
 
 ### Purchase Order & Return System (July 2025)
 - Added complete purchase order and return functionality for supplier management
