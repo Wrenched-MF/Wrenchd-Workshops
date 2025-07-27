@@ -8,9 +8,11 @@ import {
   type Quote, type InsertQuote, type QuoteWithDetails,
   type QuotePart, type InsertQuotePart,
   type Receipt, type InsertReceipt,
-  type BusinessSettings, type InsertBusinessSettings
+  type BusinessSettings, type InsertBusinessSettings,
+  customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, receipts, businessSettings
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Customers
@@ -85,84 +87,66 @@ export interface IStorage {
   createUser(user: any): Promise<any>;
 }
 
-export class MemStorage implements IStorage {
-  private customers: Map<string, Customer>;
-  private vehicles: Map<string, Vehicle>;
-  private suppliers: Map<string, Supplier>;
-  private inventoryItems: Map<string, InventoryItem>;
-  private jobs: Map<string, Job>;
-  private jobParts: Map<string, JobPart>;
-  private quotes: Map<string, Quote>;
-  private quoteParts: Map<string, QuotePart>;
-  private receipts: Map<string, Receipt>;
-  private businessSettings: BusinessSettings | undefined;
-  private users: Map<string, any>;
-
-  constructor() {
-    this.customers = new Map();
-    this.vehicles = new Map();
-    this.suppliers = new Map();
-    this.inventoryItems = new Map();
-    this.jobs = new Map();
-    this.jobParts = new Map();
-    this.quotes = new Map();
-    this.quoteParts = new Map();
-    this.receipts = new Map();
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  // Helper method to ensure business settings exist
+  private async ensureBusinessSettings(): Promise<BusinessSettings> {
+    const [existing] = await db.select().from(businessSettings).limit(1);
+    if (existing) return existing;
     
-    // Initialize with default business settings
-    this.businessSettings = {
-      id: randomUUID(),
-      businessName: "WRENCH'D Auto Repairs",
-      businessEmail: null,
-      businessPhone: null,
-      businessAddress: null,
-      currency: "GBP",
-      logoUrl: null,
-      updatedAt: new Date(),
-    };
+    // Create default settings if none exist
+    const [created] = await db
+      .insert(businessSettings)
+      .values({
+        businessName: "WRENCH'D Auto Repairs",
+        businessEmail: null,
+        businessPhone: null,
+        businessAddress: null,
+        currency: "GBP",
+        logoUrl: null,
+      })
+      .returning();
+    return created;
   }
 
   // Customers
   async getCustomers(): Promise<Customer[]> {
-    return Array.from(this.customers.values());
+    return await db.select().from(customers);
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
-    return this.customers.get(id);
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer || undefined;
   }
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
-    const id = randomUUID();
-    const customer: Customer = { 
-      ...insertCustomer, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.customers.set(id, customer);
+    const [customer] = await db
+      .insert(customers)
+      .values(insertCustomer)
+      .returning();
     return customer;
   }
 
   async updateCustomer(id: string, updates: Partial<InsertCustomer>): Promise<Customer> {
-    const existing = this.customers.get(id);
-    if (!existing) throw new Error("Customer not found");
-    
-    const updated = { ...existing, ...updates };
-    this.customers.set(id, updated);
-    return updated;
+    const [customer] = await db
+      .update(customers)
+      .set(updates)
+      .where(eq(customers.id, id))
+      .returning();
+    if (!customer) throw new Error("Customer not found");
+    return customer;
   }
 
   async deleteCustomer(id: string): Promise<void> {
-    this.customers.delete(id);
+    await db.delete(customers).where(eq(customers.id, id));
   }
 
   // Vehicles
   async getVehicles(): Promise<VehicleWithCustomer[]> {
-    const vehicles = Array.from(this.vehicles.values());
+    const vehicleList = await db.select().from(vehicles);
     const result: VehicleWithCustomer[] = [];
     
-    for (const vehicle of vehicles) {
-      const customer = this.customers.get(vehicle.customerId);
+    for (const vehicle of vehicleList) {
+      const [customer] = await db.select().from(customers).where(eq(customers.id, vehicle.customerId));
       if (customer) {
         result.push({ ...vehicle, customer });
       }
@@ -172,118 +156,118 @@ export class MemStorage implements IStorage {
   }
 
   async getVehicle(id: string): Promise<Vehicle | undefined> {
-    return this.vehicles.get(id);
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+    return vehicle || undefined;
   }
 
   async getVehiclesByCustomer(customerId: string): Promise<Vehicle[]> {
-    return Array.from(this.vehicles.values()).filter(v => v.customerId === customerId);
+    return await db.select().from(vehicles).where(eq(vehicles.customerId, customerId));
   }
 
   async createVehicle(insertVehicle: InsertVehicle): Promise<Vehicle> {
-    const id = randomUUID();
-    const vehicle: Vehicle = { 
-      ...insertVehicle, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.vehicles.set(id, vehicle);
+    const [vehicle] = await db
+      .insert(vehicles)
+      .values(insertVehicle)
+      .returning();
     return vehicle;
   }
 
   async updateVehicle(id: string, updates: Partial<InsertVehicle>): Promise<Vehicle> {
-    const existing = this.vehicles.get(id);
-    if (!existing) throw new Error("Vehicle not found");
-    
-    const updated = { ...existing, ...updates };
-    this.vehicles.set(id, updated);
-    return updated;
+    const [vehicle] = await db
+      .update(vehicles)
+      .set(updates)
+      .where(eq(vehicles.id, id))
+      .returning();
+    if (!vehicle) throw new Error("Vehicle not found");
+    return vehicle;
   }
 
   async deleteVehicle(id: string): Promise<void> {
-    this.vehicles.delete(id);
+    await db.delete(vehicles).where(eq(vehicles.id, id));
   }
 
   // Suppliers
   async getSuppliers(): Promise<Supplier[]> {
-    return Array.from(this.suppliers.values());
+    return await db.select().from(suppliers);
   }
 
   async getSupplier(id: string): Promise<Supplier | undefined> {
-    return this.suppliers.get(id);
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return supplier || undefined;
   }
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
-    const id = randomUUID();
-    const supplier: Supplier = { 
-      ...insertSupplier, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.suppliers.set(id, supplier);
+    const [supplier] = await db
+      .insert(suppliers)
+      .values(insertSupplier)
+      .returning();
     return supplier;
   }
 
   async updateSupplier(id: string, updates: Partial<InsertSupplier>): Promise<Supplier> {
-    const existing = this.suppliers.get(id);
-    if (!existing) throw new Error("Supplier not found");
-    
-    const updated = { ...existing, ...updates };
-    this.suppliers.set(id, updated);
-    return updated;
+    const [supplier] = await db
+      .update(suppliers)
+      .set(updates)
+      .where(eq(suppliers.id, id))
+      .returning();
+    if (!supplier) throw new Error("Supplier not found");
+    return supplier;
   }
 
   async deleteSupplier(id: string): Promise<void> {
-    this.suppliers.delete(id);
+    await db.delete(suppliers).where(eq(suppliers.id, id));
   }
 
   // Inventory
   async getInventoryItems(): Promise<InventoryItem[]> {
-    return Array.from(this.inventoryItems.values());
+    return await db.select().from(inventoryItems);
   }
 
   async getInventoryItem(id: string): Promise<InventoryItem | undefined> {
-    return this.inventoryItems.get(id);
+    const [item] = await db.select().from(inventoryItems).where(eq(inventoryItems.id, id));
+    return item || undefined;
   }
 
   async createInventoryItem(insertItem: InsertInventoryItem): Promise<InventoryItem> {
-    const id = randomUUID();
-    const item: InventoryItem = { 
-      ...insertItem, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.inventoryItems.set(id, item);
+    const [item] = await db
+      .insert(inventoryItems)
+      .values(insertItem)
+      .returning();
     return item;
   }
 
   async updateInventoryItem(id: string, updates: Partial<InsertInventoryItem>): Promise<InventoryItem> {
-    const existing = this.inventoryItems.get(id);
-    if (!existing) throw new Error("Inventory item not found");
-    
-    const updated = { ...existing, ...updates };
-    this.inventoryItems.set(id, updated);
-    return updated;
+    const [item] = await db
+      .update(inventoryItems)
+      .set(updates)
+      .where(eq(inventoryItems.id, id))
+      .returning();
+    if (!item) throw new Error("Inventory item not found");
+    return item;
   }
 
   async deleteInventoryItem(id: string): Promise<void> {
-    this.inventoryItems.delete(id);
+    await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
   }
 
   async getLowStockItems(): Promise<InventoryItem[]> {
-    return Array.from(this.inventoryItems.values()).filter(
-      item => item.trackStock && (item.quantity || 0) <= (item.lowStockThreshold || 5)
+    return await db.select().from(inventoryItems).where(
+      and(
+        eq(inventoryItems.trackStock, true),
+        lt(inventoryItems.quantity, inventoryItems.lowStockThreshold)
+      )
     );
   }
 
   // Jobs
   async getJobs(): Promise<JobWithDetails[]> {
-    const jobs = Array.from(this.jobs.values());
+    const jobList = await db.select().from(jobs);
     const result: JobWithDetails[] = [];
     
-    for (const job of jobs) {
-      const customer = this.customers.get(job.customerId);
-      const vehicle = this.vehicles.get(job.vehicleId);
-      const parts = Array.from(this.jobParts.values()).filter(p => p.jobId === job.id);
+    for (const job of jobList) {
+      const [customer] = await db.select().from(customers).where(eq(customers.id, job.customerId));
+      const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, job.vehicleId));
+      const parts = await db.select().from(jobParts).where(eq(jobParts.jobId, job.id));
       
       if (customer && vehicle) {
         result.push({ ...job, customer, vehicle, parts });
@@ -294,12 +278,12 @@ export class MemStorage implements IStorage {
   }
 
   async getJob(id: string): Promise<JobWithDetails | undefined> {
-    const job = this.jobs.get(id);
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
     if (!job) return undefined;
     
-    const customer = this.customers.get(job.customerId);
-    const vehicle = this.vehicles.get(job.vehicleId);
-    const parts = Array.from(this.jobParts.values()).filter(p => p.jobId === job.id);
+    const [customer] = await db.select().from(customers).where(eq(customers.id, job.customerId));
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, job.vehicleId));
+    const parts = await db.select().from(jobParts).where(eq(jobParts.jobId, job.id));
     
     if (customer && vehicle) {
       return { ...job, customer, vehicle, parts };
@@ -309,74 +293,82 @@ export class MemStorage implements IStorage {
   }
 
   async createJob(insertJob: InsertJob): Promise<Job> {
-    const id = randomUUID();
-    const job: Job = { 
-      ...insertJob, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.jobs.set(id, job);
+    const [job] = await db
+      .insert(jobs)
+      .values(insertJob)
+      .returning();
     return job;
   }
 
   async updateJob(id: string, updates: Partial<InsertJob>): Promise<Job> {
-    const existing = this.jobs.get(id);
-    if (!existing) throw new Error("Job not found");
-    
-    const updated = { ...existing, ...updates };
-    this.jobs.set(id, updated);
-    return updated;
+    const [job] = await db
+      .update(jobs)
+      .set(updates)
+      .where(eq(jobs.id, id))
+      .returning();
+    if (!job) throw new Error("Job not found");
+    return job;
   }
 
   async deleteJob(id: string): Promise<void> {
-    this.jobs.delete(id);
-    // Also delete associated parts
-    Array.from(this.jobParts.entries()).forEach(([partId, part]) => {
-      if (part.jobId === id) {
-        this.jobParts.delete(partId);
-      }
-    });
+    // Delete associated parts first
+    await db.delete(jobParts).where(eq(jobParts.jobId, id));
+    await db.delete(jobs).where(eq(jobs.id, id));
   }
 
   async getJobsByStatus(status: string): Promise<JobWithDetails[]> {
-    const allJobs = await this.getJobs();
-    return allJobs.filter(job => job.status === status);
+    const jobList = await db.select().from(jobs).where(eq(jobs.status, status));
+    const result: JobWithDetails[] = [];
+    
+    for (const job of jobList) {
+      const [customer] = await db.select().from(customers).where(eq(customers.id, job.customerId));
+      const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, job.vehicleId));
+      const parts = await db.select().from(jobParts).where(eq(jobParts.jobId, job.id));
+      
+      if (customer && vehicle) {
+        result.push({ ...job, customer, vehicle, parts });
+      }
+    }
+    
+    return result;
   }
 
   // Job Parts
   async getJobParts(jobId: string): Promise<JobPart[]> {
-    return Array.from(this.jobParts.values()).filter(p => p.jobId === jobId);
+    return await db.select().from(jobParts).where(eq(jobParts.jobId, jobId));
   }
 
   async addJobPart(insertJobPart: InsertJobPart): Promise<JobPart> {
-    const id = randomUUID();
-    const jobPart: JobPart = { ...insertJobPart, id };
-    this.jobParts.set(id, jobPart);
+    const [jobPart] = await db
+      .insert(jobParts)
+      .values(insertJobPart)
+      .returning();
     return jobPart;
   }
 
   async updateJobPart(id: string, updates: Partial<InsertJobPart>): Promise<JobPart> {
-    const existing = this.jobParts.get(id);
-    if (!existing) throw new Error("Job part not found");
-    
-    const updated = { ...existing, ...updates };
-    this.jobParts.set(id, updated);
-    return updated;
+    const [jobPart] = await db
+      .update(jobParts)
+      .set(updates)
+      .where(eq(jobParts.id, id))
+      .returning();
+    if (!jobPart) throw new Error("Job part not found");
+    return jobPart;
   }
 
   async deleteJobPart(id: string): Promise<void> {
-    this.jobParts.delete(id);
+    await db.delete(jobParts).where(eq(jobParts.id, id));
   }
 
   // Quotes
   async getQuotes(): Promise<QuoteWithDetails[]> {
-    const quotes = Array.from(this.quotes.values());
+    const quoteList = await db.select().from(quotes);
     const result: QuoteWithDetails[] = [];
     
-    for (const quote of quotes) {
-      const customer = this.customers.get(quote.customerId);
-      const vehicle = this.vehicles.get(quote.vehicleId);
-      const parts = Array.from(this.quoteParts.values()).filter(p => p.quoteId === quote.id);
+    for (const quote of quoteList) {
+      const [customer] = await db.select().from(customers).where(eq(customers.id, quote.customerId));
+      const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, quote.vehicleId));
+      const parts = await db.select().from(quoteParts).where(eq(quoteParts.quoteId, quote.id));
       
       if (customer && vehicle) {
         result.push({ ...quote, customer, vehicle, parts });
@@ -387,12 +379,12 @@ export class MemStorage implements IStorage {
   }
 
   async getQuote(id: string): Promise<QuoteWithDetails | undefined> {
-    const quote = this.quotes.get(id);
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
     if (!quote) return undefined;
     
-    const customer = this.customers.get(quote.customerId);
-    const vehicle = this.vehicles.get(quote.vehicleId);
-    const parts = Array.from(this.quoteParts.values()).filter(p => p.quoteId === quote.id);
+    const [customer] = await db.select().from(customers).where(eq(customers.id, quote.customerId));
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, quote.vehicleId));
+    const parts = await db.select().from(quoteParts).where(eq(quoteParts.quoteId, quote.id));
     
     if (customer && vehicle) {
       return { ...quote, customer, vehicle, parts };
@@ -402,111 +394,104 @@ export class MemStorage implements IStorage {
   }
 
   async createQuote(insertQuote: InsertQuote): Promise<Quote> {
-    const id = randomUUID();
-    const quote: Quote = { 
-      ...insertQuote, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.quotes.set(id, quote);
+    const [quote] = await db
+      .insert(quotes)
+      .values(insertQuote)
+      .returning();
     return quote;
   }
 
   async updateQuote(id: string, updates: Partial<InsertQuote>): Promise<Quote> {
-    const existing = this.quotes.get(id);
-    if (!existing) throw new Error("Quote not found");
-    
-    const updated = { ...existing, ...updates };
-    this.quotes.set(id, updated);
-    return updated;
+    const [quote] = await db
+      .update(quotes)
+      .set(updates)
+      .where(eq(quotes.id, id))
+      .returning();
+    if (!quote) throw new Error("Quote not found");
+    return quote;
   }
 
   async deleteQuote(id: string): Promise<void> {
-    this.quotes.delete(id);
-    // Also delete associated parts
-    Array.from(this.quoteParts.entries()).forEach(([partId, part]) => {
-      if (part.quoteId === id) {
-        this.quoteParts.delete(partId);
-      }
-    });
+    // Delete associated parts first
+    await db.delete(quoteParts).where(eq(quoteParts.quoteId, id));
+    await db.delete(quotes).where(eq(quotes.id, id));
   }
 
   // Quote Parts
   async getQuoteParts(quoteId: string): Promise<QuotePart[]> {
-    return Array.from(this.quoteParts.values()).filter(p => p.quoteId === quoteId);
+    return await db.select().from(quoteParts).where(eq(quoteParts.quoteId, quoteId));
   }
 
   async addQuotePart(insertQuotePart: InsertQuotePart): Promise<QuotePart> {
-    const id = randomUUID();
-    const quotePart: QuotePart = { ...insertQuotePart, id };
-    this.quoteParts.set(id, quotePart);
+    const [quotePart] = await db
+      .insert(quoteParts)
+      .values(insertQuotePart)
+      .returning();
     return quotePart;
   }
 
   async updateQuotePart(id: string, updates: Partial<InsertQuotePart>): Promise<QuotePart> {
-    const existing = this.quoteParts.get(id);
-    if (!existing) throw new Error("Quote part not found");
-    
-    const updated = { ...existing, ...updates };
-    this.quoteParts.set(id, updated);
-    return updated;
+    const [quotePart] = await db
+      .update(quoteParts)
+      .set(updates)
+      .where(eq(quoteParts.id, id))
+      .returning();
+    if (!quotePart) throw new Error("Quote part not found");
+    return quotePart;
   }
 
   async deleteQuotePart(id: string): Promise<void> {
-    this.quoteParts.delete(id);
+    await db.delete(quoteParts).where(eq(quoteParts.id, id));
   }
 
   // Receipts
   async getReceipts(): Promise<Receipt[]> {
-    return Array.from(this.receipts.values());
+    return await db.select().from(receipts);
   }
 
   async getReceipt(id: string): Promise<Receipt | undefined> {
-    return this.receipts.get(id);
+    const [receipt] = await db.select().from(receipts).where(eq(receipts.id, id));
+    return receipt || undefined;
   }
 
   async createReceipt(insertReceipt: InsertReceipt): Promise<Receipt> {
-    const id = randomUUID();
-    const receipt: Receipt = { 
-      ...insertReceipt, 
-      id, 
-      createdAt: new Date() 
-    };
-    this.receipts.set(id, receipt);
+    const [receipt] = await db
+      .insert(receipts)
+      .values(insertReceipt)
+      .returning();
     return receipt;
   }
 
   // Business Settings
   async getBusinessSettings(): Promise<BusinessSettings | undefined> {
-    return this.businessSettings;
+    return await this.ensureBusinessSettings();
   }
 
   async updateBusinessSettings(settings: InsertBusinessSettings): Promise<BusinessSettings> {
-    this.businessSettings = {
-      id: this.businessSettings?.id || randomUUID(),
-      ...settings,
-      updatedAt: new Date(),
-    };
-    return this.businessSettings;
+    const existing = await this.ensureBusinessSettings();
+    const [updated] = await db
+      .update(businessSettings)
+      .set(settings)
+      .where(eq(businessSettings.id, existing.id))
+      .returning();
+    return updated;
   }
 
-  // Users (existing functionality)
+  // Users (legacy compatibility)
   async getUser(id: string): Promise<any> {
-    return this.users.get(id);
+    // This would need to be implemented based on your user schema
+    return undefined;
   }
 
   async getUserByUsername(username: string): Promise<any> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    // This would need to be implemented based on your user schema
+    return undefined;
   }
 
   async createUser(insertUser: any): Promise<any> {
-    const id = randomUUID();
-    const user: any = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    // This would need to be implemented based on your user schema
+    return undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

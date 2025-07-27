@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, decimal, timestamp, boolean, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -138,6 +139,79 @@ export const businessSettings = pgTable("business_settings", {
   logoUrl: text("logo_url"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Relations
+export const customersRelations = relations(customers, ({ many }) => ({
+  vehicles: many(vehicles),
+  jobs: many(jobs),
+  quotes: many(quotes),
+}));
+
+export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [vehicles.customerId],
+    references: [customers.id],
+  }),
+  jobs: many(jobs),
+  quotes: many(quotes),
+}));
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  inventoryItems: many(inventoryItems),
+}));
+
+export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
+  supplier: one(suppliers, {
+    fields: [inventoryItems.supplierId],
+    references: [suppliers.id],
+  }),
+}));
+
+export const jobsRelations = relations(jobs, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [jobs.customerId],
+    references: [customers.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [jobs.vehicleId],
+    references: [vehicles.id],
+  }),
+  parts: many(jobParts),
+}));
+
+export const jobPartsRelations = relations(jobParts, ({ one }) => ({
+  job: one(jobs, {
+    fields: [jobParts.jobId],
+    references: [jobs.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [jobParts.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
+}));
+
+export const quotesRelations = relations(quotes, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [quotes.customerId],
+    references: [customers.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [quotes.vehicleId],
+    references: [vehicles.id],
+  }),
+  parts: many(quoteParts),
+}));
+
+export const quotePartsRelations = relations(quoteParts, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteParts.quoteId],
+    references: [quotes.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [quoteParts.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
+}));
 
 // Insert schemas
 export const insertCustomerSchema = createInsertSchema(customers).omit({
