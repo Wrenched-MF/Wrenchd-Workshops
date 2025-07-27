@@ -46,7 +46,7 @@ export default function Jobs() {
       };
       
       console.log("Cleaned data for API:", JSON.stringify(cleanData, null, 2));
-      const response = await apiRequest("POST", "/api/jobs", cleanData);
+      const response = await apiRequest("/api/jobs", "POST", cleanData);
       console.log("Job creation response:", response);
       return response;
     },
@@ -69,7 +69,7 @@ export default function Jobs() {
 
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/jobs/${id}`, data),
+      apiRequest(`/api/jobs/${id}`, "PUT", data),
     onSuccess: (updatedJob: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
@@ -82,14 +82,14 @@ export default function Jobs() {
   });
 
   const deleteJobMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/jobs/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/jobs/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
     },
   });
 
   const generateQuotePdfMutation = useMutation({
-    mutationFn: (jobId: string) => apiRequest("POST", `/api/jobs/${jobId}/quote-pdf`),
+    mutationFn: (jobId: string) => apiRequest(`/api/jobs/${jobId}/quote-pdf`, "POST"),
     onSuccess: (response: any) => {
       // Download the PDF
       if (response && response.pdfUrl) {
@@ -100,7 +100,7 @@ export default function Jobs() {
 
   const generateReceiptPdf = async (jobId: string) => {
     try {
-      const response: any = await apiRequest("POST", `/api/jobs/${jobId}/receipt-pdf`);
+      const response: any = await apiRequest(`/api/jobs/${jobId}/receipt-pdf`, "POST");
       if (response && response.pdfUrl) {
         window.open(response.pdfUrl, '_blank');
       }
@@ -116,7 +116,7 @@ export default function Jobs() {
 
   const updateJobDetails = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/jobs/${id}`, data),
+      apiRequest(`/api/jobs/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       setShowEditForm(false);
