@@ -230,14 +230,17 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Service Bay</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <Select 
+                  onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                  value={field.value || "none"}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Bay" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No Bay Assigned</SelectItem>
+                    <SelectItem value="none">No Bay Assigned</SelectItem>
                     {serviceBays
                       .filter(bay => bay.isActive)
                       .map((bay) => (

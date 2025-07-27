@@ -99,8 +99,10 @@ export default function Calendar() {
   });
 
   const updateJobMutation = useMutation({
-    mutationFn: ({ jobId, updates }: { jobId: string; updates: any }) =>
-      apiRequest(`/api/jobs/${jobId}`, "PUT", updates),
+    mutationFn: async ({ jobId, updates }: { jobId: string; updates: any }) => {
+      const response = await apiRequest(`/api/jobs/${jobId}`, "PUT", updates);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       toast({ title: "Job moved successfully" });
@@ -146,13 +148,21 @@ export default function Calendar() {
           updates: {
             serviceBayId: bayId,
             scheduledStartTime: timeSlot,
-            scheduledDate: selectedDate.toISOString(),
+            scheduledEndTime: calculateEndTime(timeSlot, 1), // Default 1 hour duration
+            scheduledDate: selectedDate.toISOString().split('T')[0], // Just the date part
           }
         });
       }
     } catch (error) {
       toast({ title: "Error moving job", variant: "destructive" });
     }
+  };
+
+  // Helper function to calculate end time
+  const calculateEndTime = (startTime: string, durationHours: number) => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endHours = hours + durationHours;
+    return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
   const handleDragOver = (e: React.DragEvent) => {
