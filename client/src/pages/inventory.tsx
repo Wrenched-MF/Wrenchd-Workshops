@@ -11,6 +11,7 @@ import EmptyState from "@/components/ui/empty-state";
 import InventoryForm from "@/components/forms/inventory-form";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { InventoryItem } from "@shared/schema";
 
 export default function Inventory() {
@@ -20,6 +21,7 @@ export default function Inventory() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const { toast } = useToast();
 
   const { data: items = [], isLoading } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
@@ -30,27 +32,45 @@ export default function Inventory() {
   });
 
   const createItemMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/inventory", data),
+    mutationFn: (data: any) => apiRequest("/api/inventory", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
+      toast({ title: "Item added successfully" });
       setShowAddForm(false);
+    },
+    onError: (error: any) => {
+      console.error("Failed to add item:", error);
+      toast({ 
+        title: "Failed to add item", 
+        description: error?.message || "Unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 
   const updateItemMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/inventory/${id}`, data),
+      apiRequest(`/api/inventory/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
+      toast({ title: "Item updated successfully" });
       setShowEditForm(false);
       setEditingItem(null);
+    },
+    onError: (error: any) => {
+      console.error("Failed to update item:", error);
+      toast({ 
+        title: "Failed to update item", 
+        description: error?.message || "Unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 
   const deleteItemMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/inventory/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/inventory/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
