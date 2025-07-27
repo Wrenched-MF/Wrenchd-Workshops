@@ -47,7 +47,10 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
     
     console.log('PDF response:', response);
     console.log('Business settings:', settings);
-    console.log('Template response for', templateType, ':', templateResponse);
+    console.log('Raw template response for', templateType, ':', templateResponse);
+    console.log('Template response status:', templateRes.status);
+    console.log('Template response type:', typeof templateResponse);
+    console.log('Template has ID?', templateResponse?.id ? 'YES' : 'NO');
     
     // Use active template settings if available, otherwise fall back to business settings
     const activeTemplate = templateResponse && templateResponse.id ? templateResponse : null;
