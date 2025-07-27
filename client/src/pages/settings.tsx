@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, Settings as SettingsIcon, FileText, CreditCard, Crown, Upload, X, ImageIcon } from "lucide-react";
+import { User, Settings as SettingsIcon, FileText, CreditCard, Crown, Upload, X, ImageIcon, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,10 +16,12 @@ import { insertBusinessSettingsSchema, type InsertBusinessSettings, type Busines
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import TemplateEditorModal from "@/components/template-editor-modal";
 
 export default function Settings() {
   const { toast } = useToast();
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
+  const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: businessSettings, isLoading } = useQuery<BusinessSettings>({
@@ -275,9 +277,46 @@ export default function Settings() {
             {/* Templates Tab */}
             <TabsContent value="templates" className="space-y-6">
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">PDF Templates</h3>
-                  <p className="text-gray-500 mb-6">Customize the design and layout of your PDF documents including purchase orders, returns, quotes, and receipts.</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Document Templates</h3>
+                    <p className="text-gray-500 mb-6">Customize the design and layout of your PDF documents including purchase orders, returns, quotes, and receipts.</p>
+                  </div>
+                  <Button onClick={() => setIsTemplateEditorOpen(true)} className="flex items-center space-x-2">
+                    <Plus className="w-4 h-4" />
+                    <span>Create Template</span>
+                  </Button>
+                </div>
+
+                {/* Default Template Card */}
+                <Card className="border border-gray-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                        <div>
+                          <h4 className="font-medium text-gray-900">Default Receipt Template</h4>
+                          <p className="text-sm text-gray-500">Standard receipt layout for completed work</p>
+                          <span className="inline-block px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full mt-1">
+                            Default
+                          </span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <SettingsIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Create Custom Template Button */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <Plus className="mx-auto h-8 w-8 text-gray-400 mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Create Custom Template</h4>
+                  <p className="text-gray-500 mb-4">Design your own template with custom colors, layout, and branding</p>
+                  <Button onClick={() => setIsTemplateEditorOpen(true)}>
+                    Create Custom Template
+                  </Button>
                 </div>
 
                 <Form {...form}>
@@ -712,6 +751,30 @@ export default function Settings() {
           </Tabs>
         </CardContent>
       </Card>
+      
+      {/* Template Editor Modal */}
+      <TemplateEditorModal
+        open={isTemplateEditorOpen}
+        onClose={() => setIsTemplateEditorOpen(false)}
+        onSave={(templateData) => {
+          console.log('Template saved:', templateData);
+          toast({
+            title: "Template saved",
+            description: "Your custom template has been created successfully.",
+          });
+          setIsTemplateEditorOpen(false);
+        }}
+        initialData={{
+          companyName: businessSettings?.businessName || "WRENCH'D Auto Repairs",
+          email: businessSettings?.businessEmail || "wrenchdmechanics@hotmail.com",
+          phone: businessSettings?.businessPhone || "Contact: wrenchdmechanics@hotmail.com",
+          address: businessSettings?.businessAddress || "Professional Mobile Mechanics\nServing Your Area",
+          logoUrl: businessSettings?.logoUrl || "",
+          primaryColor: businessSettings?.headerColor || "#16a34a",
+          secondaryColor: businessSettings?.accentColor || "#000000",
+          footerText: businessSettings?.footerText || "Professional Mobile Mechanic Services - Quality Work Guaranteed",
+        }}
+      />
     </div>
   );
 }
