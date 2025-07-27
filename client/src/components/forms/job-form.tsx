@@ -28,10 +28,11 @@ interface JobFormProps {
   onSubmit: (data: InsertJob & { jobParts: JobPart[] }) => void;
   isSubmitting?: boolean;
   initialData?: Partial<InsertJob>;
+  initialParts?: JobPart[];
 }
 
-export default function JobForm({ onSubmit, isSubmitting, initialData }: JobFormProps) {
-  const [selectedParts, setSelectedParts] = useState<JobPart[]>([]);
+export default function JobForm({ onSubmit, isSubmitting, initialData, initialParts }: JobFormProps) {
+  const [selectedParts, setSelectedParts] = useState<JobPart[]>(initialParts || []);
   
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],

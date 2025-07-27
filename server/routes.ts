@@ -269,10 +269,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/jobs/:id", async (req, res) => {
     try {
-      const validatedData = insertJobSchema.partial().parse(req.body);
-      const job = await storage.updateJob(req.params.id, validatedData);
+      const { jobParts, ...jobData } = req.body;
+      const jobId = req.params.id;
+      
+      // Get the current job to check status changes
+      const currentJob = await storage.getJob(jobId);
+      if (!currentJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      const validatedData = insertJobSchema.partial().parse(jobData);
+      const job = await storage.updateJob(jobId, validatedData);
+      
+      // Update job parts if provided
+      if (jobParts && Array.isArray(jobParts)) {
+        // Delete existing job parts
+        const existingParts = await storage.getJobParts(jobId);
+        for (const existingPart of existingParts) {
+          await storage.deleteJobPart(existingPart.id);
+        }
+        
+        // Add new job parts
+        for (const part of jobParts) {
+          await storage.addJobPart({
+            jobId: jobId,
+            inventoryItemId: part.inventoryItemId,
+            partName: part.partName,
+            partNumber: part.partNumber,
+            quantity: part.quantity,
+            unitPrice: part.unitPrice.toString(),
+            totalPrice: part.totalPrice.toString(),
+          });
+        }
+      }
+      
+      // Check if job status changed to completed - deduct inventory
+      const wasCompleted = currentJob.status === 'completed';
+      const isNowCompleted = validatedData.status === 'completed';
+      
+      if (!wasCompleted && isNowCompleted) {
+        console.log('Job completed - deducting inventory for job:', jobId);
+        
+        // Get the updated job with parts
+        const completedJob = await storage.getJob(jobId);
+        if (completedJob && completedJob.parts) {
+          for (const part of completedJob.parts) {
+            try {
+              // Get current inventory item
+              if (part.inventoryItemId) {
+                const inventoryItem = await storage.getInventoryItem(part.inventoryItemId);
+                if (inventoryItem) {
+                  const currentQuantity = inventoryItem.quantity || 0;
+                  const usedQuantity = part.quantity || 0;
+                  const newQuantity = Math.max(0, currentQuantity - usedQuantity);
+                  
+                  console.log(`Deducting inventory: ${inventoryItem.name} - ${usedQuantity} (${currentQuantity} → ${newQuantity})`);
+                  
+                  // Update inventory quantity
+                  await storage.updateInventoryItem(part.inventoryItemId, {
+                    quantity: newQuantity
+                  });
+                }
+              }
+            } catch (error) {
+              console.error(`Failed to deduct inventory for part ${part.inventoryItemId || 'unknown'}:`, error);
+            }
+          }
+        }
+      }
+      
       res.json(job);
     } catch (error) {
+      console.error("Job update error:", error);
       res.status(400).json({ message: "Failed to update job" });
     }
   });

@@ -335,6 +335,14 @@ export default function Jobs() {
                 totalAmount: editingJob.totalAmount,
                 notes: editingJob.notes,
               }}
+              initialParts={editingJob.parts?.map(part => ({
+                inventoryItemId: part.inventoryItemId || '',
+                partName: part.partName,
+                partNumber: part.partNumber || undefined,
+                quantity: part.quantity,
+                unitPrice: parseFloat(part.unitPrice || '0'),
+                totalPrice: parseFloat(part.totalPrice || '0')
+              })) || []}
             />
           )}
         </DialogContent>
