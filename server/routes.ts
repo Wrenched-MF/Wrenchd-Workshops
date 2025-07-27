@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { 
   insertCustomerSchema, insertVehicleSchema, insertSupplierSchema, 
   insertInventoryItemSchema, insertJobSchema, insertQuoteSchema,
+  insertPurchaseOrderSchema, insertReturnSchema,
   insertBusinessSettingsSchema 
 } from "@shared/schema";
 
@@ -283,6 +284,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(quote);
     } catch (error) {
       res.status(400).json({ message: "Invalid quote data" });
+    }
+  });
+
+  // Purchase Orders
+  app.get("/api/purchase-orders", async (req, res) => {
+    try {
+      const orders = await storage.getPurchaseOrders();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch purchase orders" });
+    }
+  });
+
+  app.get("/api/purchase-orders/:id", async (req, res) => {
+    try {
+      const order = await storage.getPurchaseOrder(req.params.id);
+      if (!order) {
+        return res.status(404).json({ message: "Purchase order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch purchase order" });
+    }
+  });
+
+  app.post("/api/purchase-orders", async (req, res) => {
+    try {
+      const validatedData = insertPurchaseOrderSchema.parse(req.body);
+      const order = await storage.createPurchaseOrder(validatedData);
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid purchase order data" });
+    }
+  });
+
+  app.put("/api/purchase-orders/:id", async (req, res) => {
+    try {
+      const validatedData = insertPurchaseOrderSchema.partial().parse(req.body);
+      const order = await storage.updatePurchaseOrder(req.params.id, validatedData);
+      res.json(order);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update purchase order" });
+    }
+  });
+
+  app.delete("/api/purchase-orders/:id", async (req, res) => {
+    try {
+      await storage.deletePurchaseOrder(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete purchase order" });
+    }
+  });
+
+  // Returns
+  app.get("/api/returns", async (req, res) => {
+    try {
+      const returns = await storage.getReturns();
+      res.json(returns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch returns" });
+    }
+  });
+
+  app.get("/api/returns/:id", async (req, res) => {
+    try {
+      const returnItem = await storage.getReturn(req.params.id);
+      if (!returnItem) {
+        return res.status(404).json({ message: "Return not found" });
+      }
+      res.json(returnItem);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch return" });
+    }
+  });
+
+  app.post("/api/returns", async (req, res) => {
+    try {
+      const validatedData = insertReturnSchema.parse(req.body);
+      const returnItem = await storage.createReturn(validatedData);
+      res.status(201).json(returnItem);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid return data" });
+    }
+  });
+
+  app.put("/api/returns/:id", async (req, res) => {
+    try {
+      const validatedData = insertReturnSchema.partial().parse(req.body);
+      const returnItem = await storage.updateReturn(req.params.id, validatedData);
+      res.json(returnItem);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update return" });
+    }
+  });
+
+  app.delete("/api/returns/:id", async (req, res) => {
+    try {
+      await storage.deleteReturn(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete return" });
     }
   });
 

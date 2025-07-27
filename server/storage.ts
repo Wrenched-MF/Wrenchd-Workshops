@@ -7,9 +7,14 @@ import {
   type JobPart, type InsertJobPart,
   type Quote, type InsertQuote, type QuoteWithDetails,
   type QuotePart, type InsertQuotePart,
+  type PurchaseOrder, type InsertPurchaseOrder, type PurchaseOrderWithDetails,
+  type PurchaseOrderItem, type InsertPurchaseOrderItem,
+  type Return, type InsertReturn, type ReturnWithDetails,
+  type ReturnItem, type InsertReturnItem,
   type Receipt, type InsertReceipt,
   type BusinessSettings, type InsertBusinessSettings,
-  customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, receipts, businessSettings
+  customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, 
+  purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, businessSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, lt } from "drizzle-orm";
@@ -71,6 +76,32 @@ export interface IStorage {
   addQuotePart(quotePart: InsertQuotePart): Promise<QuotePart>;
   updateQuotePart(id: string, updates: Partial<InsertQuotePart>): Promise<QuotePart>;
   deleteQuotePart(id: string): Promise<void>;
+
+  // Purchase Orders
+  getPurchaseOrders(): Promise<PurchaseOrderWithDetails[]>;
+  getPurchaseOrder(id: string): Promise<PurchaseOrderWithDetails | undefined>;
+  createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder>;
+  updatePurchaseOrder(id: string, updates: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder>;
+  deletePurchaseOrder(id: string): Promise<void>;
+  
+  // Purchase Order Items
+  getPurchaseOrderItems(orderId: string): Promise<PurchaseOrderItem[]>;
+  addPurchaseOrderItem(item: InsertPurchaseOrderItem): Promise<PurchaseOrderItem>;
+  updatePurchaseOrderItem(id: string, updates: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem>;
+  deletePurchaseOrderItem(id: string): Promise<void>;
+
+  // Returns
+  getReturns(): Promise<ReturnWithDetails[]>;
+  getReturn(id: string): Promise<ReturnWithDetails | undefined>;
+  createReturn(returnItem: InsertReturn): Promise<Return>;
+  updateReturn(id: string, updates: Partial<InsertReturn>): Promise<Return>;
+  deleteReturn(id: string): Promise<void>;
+  
+  // Return Items
+  getReturnItems(returnId: string): Promise<ReturnItem[]>;
+  addReturnItem(item: InsertReturnItem): Promise<ReturnItem>;
+  updateReturnItem(id: string, updates: Partial<InsertReturnItem>): Promise<ReturnItem>;
+  deleteReturnItem(id: string): Promise<void>;
 
   // Receipts
   getReceipts(): Promise<Receipt[]>;
@@ -442,6 +473,176 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuotePart(id: string): Promise<void> {
     await db.delete(quoteParts).where(eq(quoteParts.id, id));
+  }
+
+  // Purchase Orders
+  async getPurchaseOrders(): Promise<PurchaseOrderWithDetails[]> {
+    const orderList = await db.select().from(purchaseOrders);
+    const result: PurchaseOrderWithDetails[] = [];
+    
+    for (const order of orderList) {
+      const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, order.supplierId));
+      const items = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, order.id));
+      
+      if (supplier) {
+        result.push({ ...order, supplier, items });
+      }
+    }
+    
+    return result;
+  }
+
+  async getPurchaseOrder(id: string): Promise<PurchaseOrderWithDetails | undefined> {
+    const [order] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+    if (!order) return undefined;
+    
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, order.supplierId));
+    const items = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, order.id));
+    
+    if (supplier) {
+      return { ...order, supplier, items };
+    }
+    
+    return undefined;
+  }
+
+  async createPurchaseOrder(insertOrder: InsertPurchaseOrder): Promise<PurchaseOrder> {
+    const [order] = await db
+      .insert(purchaseOrders)
+      .values(insertOrder)
+      .returning();
+    return order;
+  }
+
+  async updatePurchaseOrder(id: string, updates: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder> {
+    const [order] = await db
+      .update(purchaseOrders)
+      .set(updates)
+      .where(eq(purchaseOrders.id, id))
+      .returning();
+    if (!order) throw new Error("Purchase order not found");
+    return order;
+  }
+
+  async deletePurchaseOrder(id: string): Promise<void> {
+    // Delete associated items first
+    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, id));
+    await db.delete(purchaseOrders).where(eq(purchaseOrders.id, id));
+  }
+
+  // Purchase Order Items
+  async getPurchaseOrderItems(orderId: string): Promise<PurchaseOrderItem[]> {
+    return await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, orderId));
+  }
+
+  async addPurchaseOrderItem(insertItem: InsertPurchaseOrderItem): Promise<PurchaseOrderItem> {
+    const [item] = await db
+      .insert(purchaseOrderItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updatePurchaseOrderItem(id: string, updates: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem> {
+    const [item] = await db
+      .update(purchaseOrderItems)
+      .set(updates)
+      .where(eq(purchaseOrderItems.id, id))
+      .returning();
+    if (!item) throw new Error("Purchase order item not found");
+    return item;
+  }
+
+  async deletePurchaseOrderItem(id: string): Promise<void> {
+    await db.delete(purchaseOrderItems).where(eq(purchaseOrderItems.id, id));
+  }
+
+  // Returns
+  async getReturns(): Promise<ReturnWithDetails[]> {
+    const returnList = await db.select().from(returns);
+    const result: ReturnWithDetails[] = [];
+    
+    for (const returnItem of returnList) {
+      const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, returnItem.supplierId));
+      const [purchaseOrder] = returnItem.purchaseOrderId 
+        ? await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, returnItem.purchaseOrderId))
+        : [undefined];
+      const items = await db.select().from(returnItems).where(eq(returnItems.returnId, returnItem.id));
+      
+      if (supplier) {
+        result.push({ ...returnItem, supplier, purchaseOrder, items });
+      }
+    }
+    
+    return result;
+  }
+
+  async getReturn(id: string): Promise<ReturnWithDetails | undefined> {
+    const [returnItem] = await db.select().from(returns).where(eq(returns.id, id));
+    if (!returnItem) return undefined;
+    
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, returnItem.supplierId));
+    const [purchaseOrder] = returnItem.purchaseOrderId 
+      ? await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, returnItem.purchaseOrderId))
+      : [undefined];
+    const items = await db.select().from(returnItems).where(eq(returnItems.returnId, returnItem.id));
+    
+    if (supplier) {
+      return { ...returnItem, supplier, purchaseOrder, items };
+    }
+    
+    return undefined;
+  }
+
+  async createReturn(insertReturn: InsertReturn): Promise<Return> {
+    const [returnItem] = await db
+      .insert(returns)
+      .values(insertReturn)
+      .returning();
+    return returnItem;
+  }
+
+  async updateReturn(id: string, updates: Partial<InsertReturn>): Promise<Return> {
+    const [returnItem] = await db
+      .update(returns)
+      .set(updates)
+      .where(eq(returns.id, id))
+      .returning();
+    if (!returnItem) throw new Error("Return not found");
+    return returnItem;
+  }
+
+  async deleteReturn(id: string): Promise<void> {
+    // Delete associated items first
+    await db.delete(returnItems).where(eq(returnItems.returnId, id));
+    await db.delete(returns).where(eq(returns.id, id));
+  }
+
+  // Return Items
+  async getReturnItems(returnId: string): Promise<ReturnItem[]> {
+    return await db.select().from(returnItems).where(eq(returnItems.returnId, returnId));
+  }
+
+  async addReturnItem(insertItem: InsertReturnItem): Promise<ReturnItem> {
+    const [item] = await db
+      .insert(returnItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updateReturnItem(id: string, updates: Partial<InsertReturnItem>): Promise<ReturnItem> {
+    const [item] = await db
+      .update(returnItems)
+      .set(updates)
+      .where(eq(returnItems.id, id))
+      .returning();
+    if (!item) throw new Error("Return item not found");
+    return item;
+  }
+
+  async deleteReturnItem(id: string): Promise<void> {
+    await db.delete(returnItems).where(eq(returnItems.id, id));
   }
 
   // Receipts

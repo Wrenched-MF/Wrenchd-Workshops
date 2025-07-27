@@ -118,10 +118,61 @@ export const quoteParts = pgTable("quote_parts", {
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
 });
 
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
+  orderNumber: text("order_number").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, shipped, delivered, cancelled
+  orderDate: timestamp("order_date").defaultNow(),
+  expectedDelivery: timestamp("expected_delivery"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).default("0"),
+  tax: decimal("tax", { precision: 10, scale: 2 }).default("0"),
+  total: decimal("total", { precision: 10, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const purchaseOrderItems = pgTable("purchase_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  purchaseOrderId: varchar("purchase_order_id").notNull().references(() => purchaseOrders.id),
+  inventoryItemId: varchar("inventory_item_id").references(() => inventoryItems.id),
+  itemName: text("item_name").notNull(),
+  itemDescription: text("item_description"),
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+});
+
+export const returns = pgTable("returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplierId: varchar("supplier_id").notNull().references(() => suppliers.id),
+  purchaseOrderId: varchar("purchase_order_id").references(() => purchaseOrders.id),
+  returnNumber: text("return_number").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, processed, completed
+  returnDate: timestamp("return_date").defaultNow(),
+  reason: text("reason").notNull(),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const returnItems = pgTable("return_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  returnId: varchar("return_id").notNull().references(() => returns.id),
+  inventoryItemId: varchar("inventory_item_id").references(() => inventoryItems.id),
+  itemName: text("item_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  condition: text("condition").notNull(), // new, used, damaged
+});
+
 export const receipts = pgTable("receipts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   jobId: varchar("job_id").references(() => jobs.id),
   quoteId: varchar("quote_id").references(() => quotes.id),
+  purchaseOrderId: varchar("purchase_order_id").references(() => purchaseOrders.id),
+  returnId: varchar("return_id").references(() => returns.id),
   type: text("type").notNull(), // job, quote, purchase_order, return
   receiptNumber: text("receipt_number").notNull(),
   pdfUrl: text("pdf_url"),
@@ -158,6 +209,52 @@ export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
 
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   inventoryItems: many(inventoryItems),
+  purchaseOrders: many(purchaseOrders),
+  returns: many(returns),
+}));
+
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  supplier: one(suppliers, {
+    fields: [purchaseOrders.supplierId],
+    references: [suppliers.id],
+  }),
+  items: many(purchaseOrderItems),
+  receipts: many(receipts),
+}));
+
+export const purchaseOrderItemsRelations = relations(purchaseOrderItems, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderItems.purchaseOrderId],
+    references: [purchaseOrders.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [purchaseOrderItems.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
+}));
+
+export const returnsRelations = relations(returns, ({ one, many }) => ({
+  supplier: one(suppliers, {
+    fields: [returns.supplierId],
+    references: [suppliers.id],
+  }),
+  purchaseOrder: one(purchaseOrders, {
+    fields: [returns.purchaseOrderId],
+    references: [purchaseOrders.id],
+  }),
+  items: many(returnItems),
+  receipts: many(receipts),
+}));
+
+export const returnItemsRelations = relations(returnItems, ({ one }) => ({
+  return: one(returns, {
+    fields: [returnItems.returnId],
+    references: [returns.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [returnItems.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
 }));
 
 export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
@@ -262,6 +359,25 @@ export const insertBusinessSettingsSchema = createInsertSchema(businessSettings)
   updatedAt: true,
 });
 
+// Zod schemas for purchase orders and returns
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
+  id: true,
+});
+
+export const insertReturnSchema = createInsertSchema(returns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReturnItemSchema = createInsertSchema(returnItems).omit({
+  id: true,
+});
+
 // Types
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -287,6 +403,18 @@ export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type QuotePart = typeof quoteParts.$inferSelect;
 export type InsertQuotePart = z.infer<typeof insertQuotePartSchema>;
 
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+
+export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
+export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+
+export type Return = typeof returns.$inferSelect;
+export type InsertReturn = z.infer<typeof insertReturnSchema>;
+
+export type ReturnItem = typeof returnItems.$inferSelect;
+export type InsertReturnItem = z.infer<typeof insertReturnItemSchema>;
+
 export type Receipt = typeof receipts.$inferSelect;
 export type InsertReceipt = z.infer<typeof insertReceiptSchema>;
 
@@ -308,4 +436,15 @@ export type QuoteWithDetails = Quote & {
 
 export type VehicleWithCustomer = Vehicle & {
   customer: Customer;
+};
+
+export type PurchaseOrderWithDetails = PurchaseOrder & {
+  supplier: Supplier;
+  items: PurchaseOrderItem[];
+};
+
+export type ReturnWithDetails = Return & {
+  supplier: Supplier;
+  purchaseOrder?: PurchaseOrder;
+  items: ReturnItem[];
 };
