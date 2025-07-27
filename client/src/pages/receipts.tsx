@@ -1,24 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ShoppingCart, RotateCcw, Search, Receipt as ReceiptIcon, Download, FileText } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Briefcase, ShoppingCart, RotateCcw, Search, Receipt as ReceiptIcon, Download, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatsCard from "@/components/ui/stats-card";
 import EmptyState from "@/components/ui/empty-state";
+import { useToast } from "@/hooks/use-toast";
 import type { Receipt, JobWithDetails, QuoteWithDetails } from "@shared/schema";
 
 export default function Receipts() {
+  const { toast } = useToast();
+  
   const { data: receiptsData, isLoading: receiptsLoading } = useQuery({
     queryKey: ["/api/receipts"],
   });
   
   const receipts = receiptsData?.receipts || [];
   const pdfDocuments = receiptsData?.pdfDocuments || [];
+
+  const deleteQuoteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/quotes/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      toast({
+        title: "Quote deleted",
+        description: "Quote has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete quote.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteReceiptMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/receipts/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
+      toast({
+        title: "Receipt deleted",
+        description: "Receipt has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete receipt.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleGeneratePDF = async (type: string, id: string) => {
     const { generatePDF } = await import('@/utils/pdfGenerator');
@@ -368,6 +408,16 @@ export default function Receipts() {
                               >
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => deleteQuoteMutation.mutate(doc.id)}
+                                disabled={deleteQuoteMutation.isPending}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
                               </Button>
                             </div>
                           </TableCell>

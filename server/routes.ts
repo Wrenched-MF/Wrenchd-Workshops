@@ -401,6 +401,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/quotes/:id", async (req, res) => {
+    try {
+      await storage.deleteQuote(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete quote" });
+    }
+  });
+
+  app.delete("/api/receipts/:id", async (req, res) => {
+    try {
+      await storage.deleteReceipt(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete receipt" });
+    }
+  });
+
   // Purchase Orders
   app.get("/api/purchase-orders", async (req, res) => {
     try {
@@ -720,11 +738,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...quotes.map(quote => ({
             id: quote.id,
             type: 'quote',
-            title: `Quote ${quote.quoteNumber || quote.id.slice(0, 8)}`,
-            date: quote.quoteDate,
-            amount: quote.totalAmount,
+            title: `Quote ${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.title || 'Service'}`,
+            date: quote.quoteDate || quote.createdAt,
+            amount: quote.totalAmount || '0',
             customer: quote.customer?.name || 'Unknown',
-            description: quote.title || 'Service quote'
+            description: quote.description || quote.title || 'Service quote'
           }))
       ];
       
