@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import EmptyState from "@/components/ui/empty-state";
 import CustomerForm from "@/components/forms/customer-form";
 import { queryClient } from "@/lib/queryClient";
@@ -61,6 +61,9 @@ export default function Customers() {
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Customer</DialogTitle>
+              <DialogDescription>
+                Add a new customer to your database with their contact information.
+              </DialogDescription>
             </DialogHeader>
             <CustomerForm 
               onSubmit={(data) => createCustomerMutation.mutate(data)}

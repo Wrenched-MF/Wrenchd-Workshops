@@ -408,6 +408,16 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
             {isSubmitting ? "Creating..." : "Create Job"}
           </Button>
         </div>
+        
+        {/* Debug Information */}
+        {Object.keys(form.formState.errors).length > 0 && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+            <p className="text-sm font-medium text-red-800">Form has errors:</p>
+            <pre className="text-xs text-red-600 mt-1">
+              {JSON.stringify(form.formState.errors, null, 2)}
+            </pre>
+          </div>
+        )}
       </form>
     </Form>
   );

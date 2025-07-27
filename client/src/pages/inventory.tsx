@@ -4,7 +4,7 @@ import { Plus, Package, AlertTriangle, PoundSterling, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import StatsCard from "@/components/ui/stats-card";
 import EmptyState from "@/components/ui/empty-state";
@@ -291,6 +291,9 @@ export default function Inventory() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Item</DialogTitle>
+            <DialogDescription>
+              Add a new inventory item to track parts and supplies.
+            </DialogDescription>
           </DialogHeader>
           <InventoryForm 
             onSubmit={createItemMutation.mutate}
@@ -304,6 +307,9 @@ export default function Inventory() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Item</DialogTitle>
+            <DialogDescription>
+              Update the details for this inventory item.
+            </DialogDescription>
           </DialogHeader>
           <InventoryForm 
             onSubmit={(data) => updateItemMutation.mutate({ id: editingItem.id, data })}

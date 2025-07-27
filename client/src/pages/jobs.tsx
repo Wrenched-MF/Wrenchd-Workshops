@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Calendar, Wrench, Check, PoundSterling, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import StatsCard from "@/components/ui/stats-card";
 import EmptyState from "@/components/ui/empty-state";
 import JobForm from "@/components/forms/job-form";
@@ -88,13 +88,13 @@ export default function Jobs() {
               Add Job
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="job-form-description">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Job</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to create a new service job for a customer's vehicle.
+              </DialogDescription>
             </DialogHeader>
-            <div id="job-form-description" className="sr-only">
-              Fill out the form below to create a new service job for a customer's vehicle.
-            </div>
             <JobForm 
               onSubmit={(data) => createJobMutation.mutate(data)}
               isSubmitting={createJobMutation.isPending}
