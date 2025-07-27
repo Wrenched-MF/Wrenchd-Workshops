@@ -1168,6 +1168,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PDF Generation endpoint
+  app.post("/api/generate-pdf", async (req, res) => {
+    try {
+      const { type, entityId } = req.body;
+      
+      if (!type || !entityId) {
+        return res.status(400).json({ message: "Type and entity ID are required" });
+      }
+
+      let entityData: any = null;
+      let pdfData: any = {};
+
+      // Get entity data based on type
+      if (type === 'receipt') {
+        // For receipts, we need to get the job data
+        const job = await storage.getJob(entityId);
+        if (!job) {
+          return res.status(404).json({ message: "Job not found" });
+        }
+        entityData = job;
+        pdfData = {
+          documentType: 'receipt',
+          documentNumber: `RCP-${Date.now()}`,
+          documentDate: new Date(),
+          job: entityData
+        };
+      } else if (type === 'quote') {
+        const quote = await storage.getQuote(entityId);
+        if (!quote) {
+          return res.status(404).json({ message: "Quote not found" });
+        }
+        entityData = quote;
+        pdfData = {
+          documentType: 'quote',
+          documentNumber: entityData.quoteNumber,
+          documentDate: entityData.createdAt,
+          quote: entityData
+        };
+      } else {
+        return res.status(400).json({ message: "Invalid document type" });
+      }
+
+      // Get business settings and template
+      const businessSettings = await storage.getBusinessSettings();
+      const template = await storage.getActiveCustomTemplateByType(type);
+
+      // Return PDF data for frontend generation
+      res.json({
+        success: true,
+        pdfData: pdfData,
+        businessSettings: businessSettings,
+        template: template
+      });
+
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
   // Dashboard Stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
