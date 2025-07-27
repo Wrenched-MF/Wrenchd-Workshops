@@ -47,17 +47,17 @@ export default function Sidebar() {
         {navigation.map((item) => {
           const active = isActive(item.href);
           return (
-            <Link key={item.name} href={item.href}>
-              <a
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                  active
-                    ? "bg-wrench-light text-wrench-dark"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </a>
+            <Link 
+              key={item.name} 
+              href={item.href}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                active
+                  ? "bg-wrench-light text-wrench-dark"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span>{item.name}</span>
             </Link>
           );
         })}
@@ -65,17 +65,16 @@ export default function Sidebar() {
 
       {/* Settings at Bottom */}
       <div className="absolute bottom-4 left-4 right-4">
-        <Link href="/settings">
-          <a
-            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-              isActive("/settings")
-                ? "bg-wrench-light text-wrench-dark"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </a>
+        <Link 
+          href="/settings"
+          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+            isActive("/settings")
+              ? "bg-wrench-light text-wrench-dark"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+          <span>Settings</span>
         </Link>
       </div>
     </div>

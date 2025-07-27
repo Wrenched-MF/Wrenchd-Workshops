@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User, Settings as SettingsIcon, FileText, CreditCard, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,26 +37,28 @@ export default function Settings() {
   const form = useForm<InsertBusinessSettings>({
     resolver: zodResolver(insertBusinessSettingsSchema),
     defaultValues: {
-      businessName: businessSettings?.businessName || "",
-      businessEmail: businessSettings?.businessEmail || "",
-      businessPhone: businessSettings?.businessPhone || "",
-      businessAddress: businessSettings?.businessAddress || "",
-      currency: businessSettings?.currency || "GBP",
-      logoUrl: businessSettings?.logoUrl || "",
+      businessName: "",
+      businessEmail: "",
+      businessPhone: "",
+      businessAddress: "",
+      currency: "GBP",
+      logoUrl: "",
     },
   });
 
-  // Update form when data loads
-  if (businessSettings && !form.formState.isDirty) {
-    form.reset({
-      businessName: businessSettings.businessName || "",
-      businessEmail: businessSettings.businessEmail || "",
-      businessPhone: businessSettings.businessPhone || "",
-      businessAddress: businessSettings.businessAddress || "",
-      currency: businessSettings.currency || "GBP",
-      logoUrl: businessSettings.logoUrl || "",
-    });
-  }
+  // Update form when data loads using useEffect to prevent infinite renders
+  useEffect(() => {
+    if (businessSettings) {
+      form.reset({
+        businessName: businessSettings.businessName || "",
+        businessEmail: businessSettings.businessEmail || "",
+        businessPhone: businessSettings.businessPhone || "",
+        businessAddress: businessSettings.businessAddress || "",
+        currency: businessSettings.currency || "GBP",
+        logoUrl: businessSettings.logoUrl || "",
+      });
+    }
+  }, [businessSettings]);
 
   const onSubmit = (data: InsertBusinessSettings) => {
     updateSettingsMutation.mutate(data);
