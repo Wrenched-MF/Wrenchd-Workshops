@@ -60,6 +60,16 @@ export const inventoryItems = pgTable("inventory_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const serviceBays = pgTable("service_bays", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#3B82F6"), // Default blue color
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   jobNumber: text("job_number").notNull().unique(),
@@ -69,6 +79,9 @@ export const jobs = pgTable("jobs", {
   description: text("description"),
   status: text("status").notNull().default("scheduled"), // scheduled, in_progress, completed, cancelled
   scheduledDate: timestamp("scheduled_date"),
+  scheduledStartTime: text("scheduled_start_time"), // e.g., "09:00"
+  scheduledEndTime: text("scheduled_end_time"), // e.g., "11:00"
+  serviceBayId: varchar("service_bay_id").references(() => serviceBays.id),
   completedDate: timestamp("completed_date"),
   laborHours: decimal("labor_hours", { precision: 5, scale: 2 }),
   laborRate: decimal("labor_rate", { precision: 10, scale: 2 }),
@@ -328,6 +341,10 @@ export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
   }),
 }));
 
+export const serviceBaysRelations = relations(serviceBays, ({ many }) => ({
+  jobs: many(jobs),
+}));
+
 export const jobsRelations = relations(jobs, ({ one, many }) => ({
   customer: one(customers, {
     fields: [jobs.customerId],
@@ -336,6 +353,10 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
   vehicle: one(vehicles, {
     fields: [jobs.vehicleId],
     references: [vehicles.id],
+  }),
+  serviceBay: one(serviceBays, {
+    fields: [jobs.serviceBayId],
+    references: [serviceBays.id],
   }),
   parts: many(jobParts),
 }));
@@ -391,6 +412,11 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
 });
 
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertServiceBaySchema = createInsertSchema(serviceBays).omit({
   id: true,
   createdAt: true,
 });
@@ -481,6 +507,9 @@ export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
 
+export type ServiceBay = typeof serviceBays.$inferSelect;
+export type InsertServiceBay = z.infer<typeof insertServiceBaySchema>;
+
 export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;
 
@@ -524,6 +553,7 @@ export type InsertArchiveReceipt = z.infer<typeof insertArchiveReceiptSchema>;
 export type JobWithDetails = Job & {
   customer: Customer;
   vehicle: Vehicle;
+  serviceBay?: ServiceBay;
   parts: JobPart[];
 };
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { insertJobSchema, type InsertJob, type Customer, type Vehicle } from "@shared/schema";
+import { insertJobSchema, type InsertJob, type Customer, type Vehicle, type ServiceBay } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +36,10 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
   
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
+  });
+
+  const { data: serviceBays = [] } = useQuery<ServiceBay[]>({
+    queryKey: ["/api/service-bays"],
   });
 
   const form = useForm<InsertJob>({
@@ -195,7 +199,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
         />
 
         {/* Scheduling */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="status"
@@ -213,6 +217,40 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="serviceBayId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Service Bay</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Bay" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">No Bay Assigned</SelectItem>
+                    {serviceBays
+                      .filter(bay => bay.isActive)
+                      .map((bay) => (
+                        <SelectItem key={bay.id} value={bay.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded" 
+                              style={{ backgroundColor: bay.color }}
+                            />
+                            {bay.name}
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -255,6 +293,45 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
                     />
                   </PopoverContent>
                 </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Time Scheduling */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="scheduledStartTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Start Time</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="time"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="scheduledEndTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>End Time</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="time"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

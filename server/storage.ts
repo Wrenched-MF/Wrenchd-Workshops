@@ -3,6 +3,7 @@ import {
   type Vehicle, type InsertVehicle, type VehicleWithCustomer,
   type Supplier, type InsertSupplier,
   type InventoryItem, type InsertInventoryItem,
+  type ServiceBay, type InsertServiceBay,
   type Job, type InsertJob, type JobWithDetails,
   type JobPart, type InsertJobPart,
   type Quote, type InsertQuote, type QuoteWithDetails,
@@ -16,7 +17,7 @@ import {
   type ArchiveReceipt, type InsertArchiveReceipt,
   type BusinessSettings, type InsertBusinessSettings,
   type CustomTemplate, type InsertCustomTemplate,
-  customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, 
+  customers, vehicles, suppliers, inventoryItems, serviceBays, jobs, jobParts, quotes, quoteParts, 
   purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, receiptArchives, archiveReceipts, businessSettings, customTemplates
 } from "@shared/schema";
 import { db } from "./db";
@@ -52,6 +53,13 @@ export interface IStorage {
   updateInventoryItem(id: string, updates: Partial<InsertInventoryItem>): Promise<InventoryItem>;
   deleteInventoryItem(id: string): Promise<void>;
   getLowStockItems(): Promise<InventoryItem[]>;
+
+  // Service Bays
+  getServiceBays(): Promise<ServiceBay[]>;
+  getServiceBay(id: string): Promise<ServiceBay | undefined>;
+  createServiceBay(bay: InsertServiceBay): Promise<ServiceBay>;
+  updateServiceBay(id: string, updates: Partial<InsertServiceBay>): Promise<ServiceBay>;
+  deleteServiceBay(id: string): Promise<void>;
 
   // Jobs
   getJobs(): Promise<JobWithDetails[]>;
@@ -330,6 +338,38 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
+  // Service Bays
+  async getServiceBays(): Promise<ServiceBay[]> {
+    return await db.select().from(serviceBays).orderBy(serviceBays.sortOrder);
+  }
+
+  async getServiceBay(id: string): Promise<ServiceBay | undefined> {
+    const [bay] = await db.select().from(serviceBays).where(eq(serviceBays.id, id));
+    return bay || undefined;
+  }
+
+  async createServiceBay(insertBay: InsertServiceBay): Promise<ServiceBay> {
+    const [bay] = await db
+      .insert(serviceBays)
+      .values(insertBay)
+      .returning();
+    return bay;
+  }
+
+  async updateServiceBay(id: string, updates: Partial<InsertServiceBay>): Promise<ServiceBay> {
+    const [bay] = await db
+      .update(serviceBays)
+      .set(updates)
+      .where(eq(serviceBays.id, id))
+      .returning();
+    if (!bay) throw new Error("Service bay not found");
+    return bay;
+  }
+
+  async deleteServiceBay(id: string): Promise<void> {
+    await db.delete(serviceBays).where(eq(serviceBays.id, id));
+  }
+
   // Jobs
   async getJobs(): Promise<JobWithDetails[]> {
     const jobList = await db.select().from(jobs).orderBy(desc(jobs.createdAt));
@@ -338,10 +378,11 @@ export class DatabaseStorage implements IStorage {
     for (const job of jobList) {
       const [customer] = await db.select().from(customers).where(eq(customers.id, job.customerId));
       const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, job.vehicleId));
+      const [serviceBay] = job.serviceBayId ? await db.select().from(serviceBays).where(eq(serviceBays.id, job.serviceBayId)) : [undefined];
       const parts = await db.select().from(jobParts).where(eq(jobParts.jobId, job.id));
       
       if (customer && vehicle) {
-        result.push({ ...job, customer, vehicle, parts });
+        result.push({ ...job, customer, vehicle, serviceBay, parts });
       }
     }
     
@@ -354,10 +395,11 @@ export class DatabaseStorage implements IStorage {
     
     const [customer] = await db.select().from(customers).where(eq(customers.id, job.customerId));
     const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, job.vehicleId));
+    const [serviceBay] = job.serviceBayId ? await db.select().from(serviceBays).where(eq(serviceBays.id, job.serviceBayId)) : [undefined];
     const parts = await db.select().from(jobParts).where(eq(jobParts.jobId, job.id));
     
     if (customer && vehicle) {
-      return { ...job, customer, vehicle, parts };
+      return { ...job, customer, vehicle, serviceBay, parts };
     }
     
     return undefined;

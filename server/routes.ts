@@ -4,7 +4,7 @@ import { storage } from "./storage";
 // We'll implement simple PDF generation for now
 import { 
   insertCustomerSchema, insertVehicleSchema, insertSupplierSchema, 
-  insertInventoryItemSchema, insertJobSchema, insertQuoteSchema,
+  insertInventoryItemSchema, insertServiceBaySchema, insertJobSchema, insertQuoteSchema,
   insertPurchaseOrderSchema, insertReturnSchema,
   insertBusinessSettingsSchema, insertCustomTemplateSchema
 } from "@shared/schema";
@@ -213,6 +213,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete inventory item" });
+    }
+  });
+
+  // Service Bays
+  app.get("/api/service-bays", async (req, res) => {
+    try {
+      const bays = await storage.getServiceBays();
+      res.json(bays);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch service bays" });
+    }
+  });
+
+  app.post("/api/service-bays", async (req, res) => {
+    try {
+      const validatedData = insertServiceBaySchema.parse(req.body);
+      const bay = await storage.createServiceBay(validatedData);
+      res.status(201).json(bay);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid service bay data" });
+    }
+  });
+
+  app.put("/api/service-bays/:id", async (req, res) => {
+    try {
+      const validatedData = insertServiceBaySchema.partial().parse(req.body);
+      const bay = await storage.updateServiceBay(req.params.id, validatedData);
+      res.json(bay);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update service bay" });
+    }
+  });
+
+  app.delete("/api/service-bays/:id", async (req, res) => {
+    try {
+      await storage.deleteServiceBay(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete service bay" });
     }
   });
 
