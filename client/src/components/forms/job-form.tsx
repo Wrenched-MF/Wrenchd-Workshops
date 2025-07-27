@@ -90,6 +90,11 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
   };
 
   const handleSubmit = (data: InsertJob) => {
+    // Debug form data
+    console.log("Form data:", data);
+    console.log("Form errors:", form.formState.errors);
+    console.log("Selected parts:", selectedParts);
+    
     // Ensure dates are properly formatted as Date objects
     const formattedData = {
       ...data,
@@ -97,6 +102,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
       completedDate: data.completedDate ? new Date(data.completedDate) : null,
       jobParts: selectedParts,
     };
+    console.log("Formatted data:", formattedData);
     onSubmit(formattedData);
   };
 
