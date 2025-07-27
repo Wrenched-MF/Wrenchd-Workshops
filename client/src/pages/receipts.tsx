@@ -84,26 +84,7 @@ export default function Receipts() {
     await previewPDF(type, id);
   };
 
-  const emailReceiptMutation = useMutation({
-    mutationFn: (jobId: string) => apiRequest("POST", `/api/jobs/${jobId}/email-receipt`),
-    onSuccess: () => {
-      toast({
-        title: "Receipt emailed",
-        description: "Receipt has been sent to the customer's email address.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Email failed",
-        description: "Failed to send receipt email. Please check email configuration.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleEmailReceipt = (jobId: string) => {
-    emailReceiptMutation.mutate(jobId);
-  };
+  // Removed email functionality as requested - manual emailing preferred
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<JobWithDetails[]>({
     queryKey: ["/api/jobs"],
@@ -115,6 +96,14 @@ export default function Receipts() {
 
   const completedJobs = jobs.filter(job => job.status === 'completed');
   const totalValue = completedJobs.reduce((sum, job) => sum + parseFloat(job.totalAmount || '0'), 0);
+
+  // Create a map of job IDs to receipt IDs for PDF generation
+  const jobToReceiptMap = new Map();
+  receipts.forEach((receipt: any) => {
+    if (receipt.jobId) {
+      jobToReceiptMap.set(receipt.jobId, receipt.id);
+    }
+  });
 
   if (receiptsLoading || jobsLoading || quotesLoading) {
     return <div>Loading receipts...</div>;
@@ -231,19 +220,30 @@ export default function Receipts() {
                         £{parseFloat(job.totalAmount || '0').toFixed(2)}
                       </p>
                       <div className="flex items-center space-x-2">
-                        <button 
-                          className="text-wrench-green hover:text-wrench-dark text-sm font-medium"
-                          onClick={() => handleGeneratePDF('receipt', job.id)}
-                        >
-                          View Receipt
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button 
-                          className="text-wrench-green hover:text-wrench-dark text-sm font-medium"
-                          onClick={() => handleEmailReceipt(job.id)}
-                        >
-                          Email
-                        </button>
+                        {jobToReceiptMap.has(job.id) ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePreviewPDF('receipt', jobToReceiptMap.get(job.id))}
+                              className="text-wrench-green hover:text-wrench-dark border-wrench-green"
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleGeneratePDF('receipt', jobToReceiptMap.get(job.id))}
+                              className="text-wrench-green hover:text-wrench-dark border-wrench-green"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-gray-500 text-sm">No receipt available</span>
+                        )}
                       </div>
                     </div>
                   </div>
