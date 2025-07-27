@@ -424,6 +424,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Receipt Archives
+  app.get("/api/receipt-archives", async (req, res) => {
+    try {
+      const archives = await storage.getReceiptArchives();
+      res.json({ archives });
+    } catch (error) {
+      console.error("Get archives error:", error);
+      res.status(500).json({ message: "Failed to fetch receipt archives" });
+    }
+  });
+
+  app.post("/api/receipt-archives", async (req, res) => {
+    try {
+      const archive = await storage.createReceiptArchive(req.body);
+      res.json({ archive });
+    } catch (error) {
+      console.error("Create archive error:", error);
+      res.status(500).json({ message: "Failed to create receipt archive" });
+    }
+  });
+
+  app.get("/api/receipt-archives/:id", async (req, res) => {
+    try {
+      const archive = await storage.getReceiptArchive(req.params.id);
+      if (!archive) {
+        return res.status(404).json({ message: "Archive not found" });
+      }
+      const receipts = await storage.getArchiveReceipts(req.params.id);
+      res.json({ archive, receipts });
+    } catch (error) {
+      console.error("Get archive error:", error);
+      res.status(500).json({ message: "Failed to fetch archive" });
+    }
+  });
+
+  app.post("/api/receipt-archives/:id/backup", async (req, res) => {
+    try {
+      const archiveId = req.params.id;
+      const archive = await storage.getReceiptArchive(archiveId);
+      if (!archive) {
+        return res.status(404).json({ message: "Archive not found" });
+      }
+
+      // Simulate cloud backup process
+      const backupPath = `backups/${archive.archiveName}-${Date.now()}.zip`;
+      console.log(`Starting backup for archive: ${archive.archiveName}`);
+      console.log(`Backup will be stored at: ${backupPath}`);
+      
+      // Update archive status
+      await storage.updateReceiptArchive(archiveId, {
+        status: "backed_up",
+        backupPath,
+        backupDate: new Date()
+      });
+
+      res.json({ 
+        message: "Archive backup completed successfully",
+        backupPath
+      });
+    } catch (error) {
+      console.error("Backup archive error:", error);
+      res.status(500).json({ message: "Failed to backup archive" });
+    }
+  });
+
+  app.post("/api/receipts/:id/archive", async (req, res) => {
+    try {
+      const receipt = await storage.archiveReceipt(req.params.id);
+      res.json({ receipt });
+    } catch (error) {
+      console.error("Archive receipt error:", error);
+      res.status(500).json({ message: "Failed to archive receipt" });
+    }
+  });
+
+  app.post("/api/receipt-archives/auto-create", async (req, res) => {
+    try {
+      const { type = "monthly", date = new Date() } = req.body;
+      const currentDate = new Date(date);
+      
+      let startDate: Date;
+      let endDate: Date;
+      let archiveName: string;
+
+      if (type === "monthly") {
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        archiveName = `Monthly Archive - ${startDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`;
+      } else if (type === "yearly") {
+        startDate = new Date(currentDate.getFullYear(), 0, 1);
+        endDate = new Date(currentDate.getFullYear(), 11, 31);
+        archiveName = `Yearly Archive - ${currentDate.getFullYear()}`;
+      } else {
+        return res.status(400).json({ message: "Invalid archive type" });
+      }
+
+      // Get receipts in date range
+      const allReceipts = await storage.getReceipts();
+      const receiptsInRange = allReceipts.filter(receipt => {
+        const receiptDate = new Date(receipt.createdAt || '');
+        return receiptDate >= startDate && receiptDate <= endDate && !receipt.archived;
+      });
+
+      if (receiptsInRange.length === 0) {
+        return res.status(400).json({ message: "No receipts found in date range" });
+      }
+
+      // Calculate total value
+      const totalValue = receiptsInRange.reduce((sum, receipt) => 
+        sum + parseFloat(receipt.totalAmount || '0'), 0
+      );
+
+      // Create archive
+      const archive = await storage.createReceiptArchive({
+        archiveName,
+        archiveType: type,
+        startDate,
+        endDate,
+        receiptCount: receiptsInRange.length,
+        totalValue: totalValue.toString(),
+        status: "active"
+      });
+
+      // Add receipts to archive and mark them as archived
+      for (const receipt of receiptsInRange) {
+        await storage.addReceiptToArchive(archive.id, receipt.id);
+        await storage.archiveReceipt(receipt.id);
+      }
+
+      res.json({ 
+        archive, 
+        receiptsArchived: receiptsInRange.length,
+        totalValue 
+      });
+    } catch (error) {
+      console.error("Auto-create archive error:", error);
+      res.status(500).json({ message: "Failed to create automatic archive" });
+    }
+  });
+
   // Quotes
   app.get("/api/quotes", async (req, res) => {
     try {

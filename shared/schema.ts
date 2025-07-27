@@ -180,6 +180,35 @@ export const receipts = pgTable("receipts", {
   receiptNumber: text("receipt_number").notNull(),
   pdfUrl: text("pdf_url"),
   emailSent: boolean("email_sent").default(false),
+  archived: boolean("archived").default(false),
+  archivedAt: timestamp("archived_at"),
+  backupStatus: text("backup_status").default("pending"), // pending, completed, failed
+  backupPath: text("backup_path"),
+  tags: text("tags"), // comma-separated tags for organization
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  customerName: text("customer_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Archive system for organizing and backing up receipts
+export const receiptArchives = pgTable("receipt_archives", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  archiveName: text("archive_name").notNull(),
+  archiveType: text("archive_type").notNull(), // monthly, yearly, customer, custom
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  receiptCount: integer("receipt_count").default(0),
+  totalValue: decimal("total_value", { precision: 10, scale: 2 }).default("0"),
+  status: text("status").default("active"), // active, archived, backed_up
+  backupPath: text("backup_path"),
+  backupDate: timestamp("backup_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const archiveReceipts = pgTable("archive_receipts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  archiveId: varchar("archive_id").notNull().references(() => receiptArchives.id),
+  receiptId: varchar("receipt_id").notNull().references(() => receipts.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -405,6 +434,16 @@ export const insertCustomTemplateSchema = createInsertSchema(customTemplates).om
   updatedAt: true,
 });
 
+export const insertReceiptArchiveSchema = createInsertSchema(receiptArchives).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertArchiveReceiptSchema = createInsertSchema(archiveReceipts).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Zod schemas for purchase orders and returns
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
   id: true,
@@ -474,6 +513,12 @@ export type InsertBusinessSettings = z.infer<typeof insertBusinessSettingsSchema
 
 export type CustomTemplate = typeof customTemplates.$inferSelect;
 export type InsertCustomTemplate = z.infer<typeof insertCustomTemplateSchema>;
+
+export type ReceiptArchive = typeof receiptArchives.$inferSelect;
+export type InsertReceiptArchive = z.infer<typeof insertReceiptArchiveSchema>;
+
+export type ArchiveReceipt = typeof archiveReceipts.$inferSelect;
+export type InsertArchiveReceipt = z.infer<typeof insertArchiveReceiptSchema>;
 
 // Extended types with relations
 export type JobWithDetails = Job & {

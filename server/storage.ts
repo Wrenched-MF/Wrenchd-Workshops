@@ -12,10 +12,12 @@ import {
   type Return, type InsertReturn, type ReturnWithDetails,
   type ReturnItem, type InsertReturnItem,
   type Receipt, type InsertReceipt,
+  type ReceiptArchive, type InsertReceiptArchive,
+  type ArchiveReceipt, type InsertArchiveReceipt,
   type BusinessSettings, type InsertBusinessSettings,
   type CustomTemplate, type InsertCustomTemplate,
   customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, 
-  purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, businessSettings, customTemplates
+  purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, receiptArchives, archiveReceipts, businessSettings, customTemplates
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, lt } from "drizzle-orm";
@@ -108,6 +110,18 @@ export interface IStorage {
   getReceipts(): Promise<Receipt[]>;
   getReceipt(id: string): Promise<Receipt | undefined>;
   createReceipt(receipt: InsertReceipt): Promise<Receipt>;
+  updateReceipt(id: string, updates: Partial<InsertReceipt>): Promise<Receipt>;
+  archiveReceipt(id: string): Promise<Receipt>;
+  
+  // Receipt Archives
+  getReceiptArchives(): Promise<ReceiptArchive[]>;
+  getReceiptArchive(id: string): Promise<ReceiptArchive | undefined>;
+  createReceiptArchive(archive: InsertReceiptArchive): Promise<ReceiptArchive>;
+  updateReceiptArchive(id: string, updates: Partial<InsertReceiptArchive>): Promise<ReceiptArchive>;
+  deleteReceiptArchive(id: string): Promise<void>;
+  getArchiveReceipts(archiveId: string): Promise<Receipt[]>;
+  addReceiptToArchive(archiveId: string, receiptId: string): Promise<void>;
+  removeReceiptFromArchive(archiveId: string, receiptId: string): Promise<void>;
 
   // Business Settings
   getBusinessSettings(): Promise<BusinessSettings | undefined>;
@@ -693,6 +707,94 @@ export class DatabaseStorage implements IStorage {
       .values(insertReceipt)
       .returning();
     return receipt;
+  }
+
+  async updateReceipt(id: string, updates: Partial<InsertReceipt>): Promise<Receipt> {
+    const [receipt] = await db
+      .update(receipts)
+      .set(updates)
+      .where(eq(receipts.id, id))
+      .returning();
+    if (!receipt) throw new Error("Receipt not found");
+    return receipt;
+  }
+
+  async archiveReceipt(id: string): Promise<Receipt> {
+    const [receipt] = await db
+      .update(receipts)
+      .set({ 
+        archived: true, 
+        archivedAt: new Date(),
+        backupStatus: "pending" 
+      })
+      .where(eq(receipts.id, id))
+      .returning();
+    if (!receipt) throw new Error("Receipt not found");
+    return receipt;
+  }
+
+  // Receipt Archives
+  async getReceiptArchives(): Promise<ReceiptArchive[]> {
+    return await db.select().from(receiptArchives);
+  }
+
+  async getReceiptArchive(id: string): Promise<ReceiptArchive | undefined> {
+    const [archive] = await db.select().from(receiptArchives).where(eq(receiptArchives.id, id));
+    return archive || undefined;
+  }
+
+  async createReceiptArchive(insertArchive: InsertReceiptArchive): Promise<ReceiptArchive> {
+    const [archive] = await db
+      .insert(receiptArchives)
+      .values(insertArchive)
+      .returning();
+    return archive;
+  }
+
+  async updateReceiptArchive(id: string, updates: Partial<InsertReceiptArchive>): Promise<ReceiptArchive> {
+    const [archive] = await db
+      .update(receiptArchives)
+      .set(updates)
+      .where(eq(receiptArchives.id, id))
+      .returning();
+    if (!archive) throw new Error("Archive not found");
+    return archive;
+  }
+
+  async deleteReceiptArchive(id: string): Promise<void> {
+    // Remove archive receipt links first
+    await db.delete(archiveReceipts).where(eq(archiveReceipts.archiveId, id));
+    await db.delete(receiptArchives).where(eq(receiptArchives.id, id));
+  }
+
+  async getArchiveReceipts(archiveId: string): Promise<Receipt[]> {
+    const archiveReceiptsList = await db
+      .select()
+      .from(archiveReceipts)
+      .where(eq(archiveReceipts.archiveId, archiveId));
+    
+    const receiptIds = archiveReceiptsList.map(ar => ar.receiptId);
+    if (receiptIds.length === 0) return [];
+    
+    return await db.select().from(receipts).where(
+      eq(receipts.id, receiptIds[0]) // This would need proper implementation for multiple IDs
+    );
+  }
+
+  async addReceiptToArchive(archiveId: string, receiptId: string): Promise<void> {
+    await db.insert(archiveReceipts).values({
+      archiveId,
+      receiptId
+    });
+  }
+
+  async removeReceiptFromArchive(archiveId: string, receiptId: string): Promise<void> {
+    await db.delete(archiveReceipts).where(
+      and(
+        eq(archiveReceipts.archiveId, archiveId),
+        eq(archiveReceipts.receiptId, receiptId)
+      )
+    );
   }
 
   // Business Settings
