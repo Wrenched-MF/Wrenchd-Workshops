@@ -16,13 +16,21 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       const data = response.data;
       console.log('PDF data:', data);
       
-      // Company header
+      // Company header with logo space
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('WRENCH\'D', 15, 20);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('AUTO REPAIRS', 15, 28);
+      
+      // Company details (right side)
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
-      doc.text('Mobile Mechanic Services', 140, 20);
-      doc.text('Phone: 07123 456789', 140, 25);
-      doc.text('Email: info@wrenchd.com', 140, 30);
+      doc.text('Mobile Mechanic Services', 140, 15);
+      doc.text('Phone: 07123 456789', 140, 20);
+      doc.text('Email: info@wrenchd.com', 140, 25);
+      doc.text('Website: www.wrenchd.co.uk', 140, 30);
       
       // Horizontal line
       doc.setLineWidth(0.5);
@@ -240,14 +248,17 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(splitNotes, 15, yPosition);
       }
       
-      // Footer
-      const footerY = 280;
+      // Footer with branding
+      const footerY = 275;
       doc.setLineWidth(0.5);
       doc.line(15, footerY, 195, footerY);
       doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('WRENCH\'D AUTO REPAIRS', 15, footerY + 5);
       doc.setFont('helvetica', 'normal');
-      doc.text('WRENCH\'D AUTO REPAIRS - Mobile Mechanic Services', 15, footerY + 5);
-      doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 15, footerY + 10);
+      doc.text('Mobile Mechanic Services - Professional Automotive Solutions', 15, footerY + 10);
+      doc.text(`Document generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 15, footerY + 15);
+      doc.text('Thank you for choosing WRENCH\'D for your automotive needs!', 15, footerY + 20);
       
       // Download the PDF
       const downloadFileName = fileName || `WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`;
@@ -279,17 +290,32 @@ export const previewPDF = async (type: string, id: string) => {
       
       const data = response.data;
       
-      // Quick preview with basic content
+      // Branded preview header
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('WRENCH\'D', 15, 20);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('AUTO REPAIRS', 15, 28);
+      
       doc.setFontSize(10);
-      doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
-      doc.text('Mobile Mechanic Services', 140, 20);
+      doc.text('Mobile Mechanic Services', 140, 15);
+      doc.text('Phone: 07123 456789', 140, 20);
+      doc.text('Email: info@wrenchd.com', 140, 25);
+      
+      // Horizontal line
+      doc.setLineWidth(0.5);
+      doc.line(15, 40, 195, 40);
       
       doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
       doc.text(data.title, 15, 55);
       
       doc.setFontSize(12);
-      doc.text(`Document Type: ${type}`, 15, 80);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Document Type: ${type.toUpperCase().replace('-', ' ')}`, 15, 80);
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, 95);
+      doc.text('Preview Mode - Full document available via Download', 15, 110);
       
       // Create blob and open in new window
       const pdfBlob = doc.output('blob');
