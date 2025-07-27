@@ -17,10 +17,13 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Backend integration** - Job creation saves associated parts with proper inventory linking
 - **COMPLETED: Dynamic autocomplete interface** - Real-time search with part images, stock levels, and keyboard navigation
 - **COMPLETED: Job workflow PDF generation** - Quote PDFs for in-progress jobs, automatic receipt PDFs when completed
+- **COMPLETED: Automatic job numbering system** - Unique "JOB-" and "QTE-" numbers for tracking
+- **COMPLETED: Comprehensive PDF details** - All PDFs now include complete customer/vehicle data, garage details, labor/parts breakdown
 - Replaced manual parts price entry with inventory-based part selection system
 - Search shows real-time filtering with stock levels and pricing information
 - New part creation pre-fills with search term and integrates seamlessly with inventory system
 - Job status workflow now includes PDF generation at appropriate stages
+- Job numbers display prominently in blue below job titles for easy tracking
 
 ### Complete PDF Template Customization System (July 2025)
 - Built comprehensive PDF template editor with live preview functionality
