@@ -121,6 +121,7 @@ export interface IStorage {
   deleteCustomTemplate(id: string): Promise<void>;
   activateCustomTemplate(id: string): Promise<CustomTemplate>;
   getActiveCustomTemplate(): Promise<CustomTemplate | null>;
+  getActiveCustomTemplateByType(templateType: string): Promise<CustomTemplate | null>;
 
   // Users (from existing schema)
   getUser(id: string): Promise<any>;
@@ -762,6 +763,20 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(customTemplates)
       .where(eq(customTemplates.isActive, true))
+      .limit(1);
+    return template || null;
+  }
+
+  async getActiveCustomTemplateByType(templateType: string): Promise<CustomTemplate | null> {
+    const [template] = await db
+      .select()
+      .from(customTemplates)
+      .where(
+        and(
+          eq(customTemplates.templateType, templateType),
+          eq(customTemplates.isActive, true)
+        )
+      )
       .limit(1);
     return template || null;
   }

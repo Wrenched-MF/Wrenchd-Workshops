@@ -28,7 +28,7 @@ export default function Settings() {
     queryKey: ["/api/settings/business"],
   });
 
-  const { data: customTemplates, isLoading: templatesLoading } = useQuery({
+  const { data: customTemplates, isLoading: templatesLoading } = useQuery<any[]>({
     queryKey: ["/api/templates"],
   });
 
@@ -360,54 +360,66 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                {/* Custom Templates */}
-                {customTemplates && customTemplates.length > 0 && (
-                  <div className="space-y-4">
-                    {customTemplates.map((template: any) => (
-                      <Card key={template.id} className="border border-gray-200">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <FileText className="w-8 h-8 text-blue-500" />
-                              <div>
-                                <h4 className="font-medium text-gray-900">{template.templateName}</h4>
-                                <p className="text-sm text-gray-500">
-                                  {template.templateType.charAt(0).toUpperCase() + template.templateType.slice(1)} template
-                                </p>
-                                <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${
-                                  template.isActive 
-                                    ? 'text-green-700 bg-green-100' 
-                                    : 'text-gray-600 bg-gray-100'
-                                }`}>
-                                  {template.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {!template.isActive && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => activateTemplateMutation.mutate(template.id)}
-                                  disabled={activateTemplateMutation.isPending}
-                                >
-                                  Activate
-                                </Button>
-                              )}
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => deleteTemplateMutation.mutate(template.id)}
-                                disabled={deleteTemplateMutation.isPending}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                Delete
-                              </Button>
-                            </div>
+                {/* Custom Templates by Category */}
+                {customTemplates && Array.isArray(customTemplates) && customTemplates.length > 0 && (
+                  <div className="space-y-6">
+                    {/* Group templates by type */}
+                    {['receipt', 'quote', 'purchase_order', 'return'].map((templateType) => {
+                      const templatesOfType = (customTemplates || []).filter((t: any) => t.templateType === templateType);
+                      if (templatesOfType.length === 0) return null;
+                      
+                      return (
+                        <div key={templateType}>
+                          <h4 className="text-md font-medium text-gray-900 mb-3 capitalize">
+                            {templateType.replace('_', ' ')} Templates
+                          </h4>
+                          <div className="space-y-3">
+                            {templatesOfType.map((template: any) => (
+                              <Card key={template.id} className="border border-gray-200">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <FileText className="w-6 h-6 text-blue-500" />
+                                      <div>
+                                        <h5 className="font-medium text-gray-900">{template.templateName}</h5>
+                                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${
+                                          template.isActive 
+                                            ? 'text-green-700 bg-green-100' 
+                                            : 'text-gray-600 bg-gray-100'
+                                        }`}>
+                                          {template.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {!template.isActive && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => activateTemplateMutation.mutate(template.id)}
+                                          disabled={activateTemplateMutation.isPending}
+                                        >
+                                          Activate
+                                        </Button>
+                                      )}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => deleteTemplateMutation.mutate(template.id)}
+                                        disabled={deleteTemplateMutation.isPending}
+                                        className="text-red-600 hover:text-red-700"
+                                      >
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 

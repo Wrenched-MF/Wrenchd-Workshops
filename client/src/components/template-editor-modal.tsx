@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const templateSchema = z.object({
   templateName: z.string().min(1, "Template name is required"),
-  templateType: z.enum(["receipt", "quote", "purchase-order", "return"]),
+  templateType: z.enum(["receipt", "quote", "purchase_order", "return"]),
   companyName: z.string().min(1, "Company name is required"),
   email: z.string().email("Valid email is required"),
   phone: z.string().min(1, "Phone is required"),
@@ -171,7 +171,7 @@ export default function TemplateEditorModal({
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text(`Sample ${templateData.templateType.toUpperCase().replace('-', ' ')}`, 15, yPosition);
+      doc.text(`Sample ${templateData.templateType.toUpperCase().replace('_', ' ')}`, 15, yPosition);
       yPosition += 15;
       
       // Sample content
@@ -305,7 +305,7 @@ export default function TemplateEditorModal({
                           <SelectContent>
                             <SelectItem value="receipt">Receipt</SelectItem>
                             <SelectItem value="quote">Quote</SelectItem>
-                            <SelectItem value="purchase-order">Purchase Order</SelectItem>
+                            <SelectItem value="purchase_order">Purchase Order</SelectItem>
                             <SelectItem value="return">Return</SelectItem>
                           </SelectContent>
                         </Select>

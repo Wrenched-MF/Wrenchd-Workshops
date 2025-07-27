@@ -24,27 +24,44 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
   try {
     console.log('Generating PDF for:', type, id);
     
-    // Get both PDF data and template settings
-    const [pdfRes, settingsRes] = await Promise.all([
+    // Map document types to template types
+    const templateTypeMap: { [key: string]: string } = {
+      'receipt': 'receipt',
+      'quote': 'quote', 
+      'purchase-order': 'purchase_order',
+      'return': 'return'
+    };
+    
+    const templateType = templateTypeMap[type] || 'general';
+    
+    // Get PDF data, business settings, and active template for this document type
+    const [pdfRes, settingsRes, templateRes] = await Promise.all([
       apiRequest("POST", "/api/generate-pdf", { type, id }),
-      apiRequest("GET", "/api/settings/business")
+      apiRequest("GET", "/api/settings/business"),
+      apiRequest("GET", `/api/templates/active/${templateType}`)
     ]);
     
     const response = await pdfRes.json();
     const settings = await settingsRes.json();
+    const activeTemplate = await templateRes.json();
     
     console.log('PDF response:', response);
-    console.log('Template settings:', settings);
-    console.log('Settings breakdown:', {
-      headerColor: settings.headerColor,
-      accentColor: settings.accentColor,
-      headerFontSize: settings.headerFontSize,
-      fontSize: settings.fontSize,
-      showLogo: settings.showLogo,
-      logoPosition: settings.logoPosition,
-      headerLayout: settings.headerLayout,
-      footerText: settings.footerText,
-      logoUrl: settings.logoUrl ? 'Present' : 'Missing'
+    console.log('Business settings:', settings);
+    console.log('Active template for', templateType, ':', activeTemplate);
+    
+    // Use active template settings if available, otherwise fall back to business settings
+    const templateSettings = activeTemplate || settings;
+    
+    console.log('Final template settings:', {
+      headerColor: templateSettings.headerColor || templateSettings.primaryColor,
+      accentColor: templateSettings.accentColor || templateSettings.secondaryColor,
+      headerFontSize: templateSettings.headerFontSize,
+      fontSize: templateSettings.fontSize,
+      showLogo: templateSettings.showLogo,
+      logoPosition: templateSettings.logoPosition,
+      headerLayout: templateSettings.headerLayout,
+      footerText: templateSettings.footerText,
+      logoUrl: templateSettings.logoUrl ? 'Present' : 'Missing'
     });
     
     if (response && response.success) {
@@ -55,13 +72,13 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       console.log('PDF data:', data);
       
       // Apply template settings with more detailed debugging
-      const headerColor = hexToRgb(settings.headerColor || '#000000');
-      const accentColor = hexToRgb(settings.accentColor || '#22c55e');
-      const headerFontSize = settings.headerFontSize || 20;
-      const fontSize = settings.fontSize || 12;
-      const showLogo = settings.showLogo !== false;
-      const logoPosition = settings.logoPosition || 'left';
-      const headerLayout = settings.headerLayout || 'standard';
+      const headerColor = hexToRgb(templateSettings.headerColor || templateSettings.primaryColor || '#000000');
+      const accentColor = hexToRgb(templateSettings.accentColor || templateSettings.secondaryColor || '#22c55e');
+      const headerFontSize = templateSettings.headerFontSize || 20;
+      const fontSize = templateSettings.fontSize || 12;
+      const showLogo = templateSettings.showLogo !== false;
+      const logoPosition = templateSettings.logoPosition || 'left';
+      const headerLayout = templateSettings.headerLayout || 'standard';
       
       console.log('Applied settings:', {
         headerColor: `rgb(${headerColor.r}, ${headerColor.g}, ${headerColor.b})`,

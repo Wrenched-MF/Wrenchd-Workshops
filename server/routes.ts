@@ -696,6 +696,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/templates/active/:type", async (req, res) => {
+    try {
+      const template = await storage.getActiveCustomTemplateByType(req.params.type);
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching active template by type:", error);
+      res.status(500).json({ error: "Failed to fetch active template" });
+    }
+  });
+
   // Dashboard Stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
