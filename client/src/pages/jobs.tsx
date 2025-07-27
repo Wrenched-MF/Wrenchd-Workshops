@@ -23,8 +23,30 @@ export default function Jobs() {
 
   const createJobMutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log("Creating job with data:", data);
-      const response = await apiRequest("POST", "/api/jobs", data);
+      console.log("Creating job with data:", JSON.stringify(data, null, 2));
+      
+      // Clean up the data before sending
+      const cleanData = {
+        customerId: data.customerId,
+        vehicleId: data.vehicleId,
+        title: data.title,
+        description: data.description || null,
+        status: data.status || "scheduled",
+        scheduledDate: data.scheduledDate,
+        scheduledStartTime: data.scheduledStartTime || null,
+        scheduledEndTime: data.scheduledEndTime || null,
+        serviceBayId: data.serviceBayId || null,
+        laborHours: data.laborHours || "0",
+        laborRate: data.laborRate || "50.00",
+        partsTotal: data.partsTotal || "0",
+        laborTotal: data.laborTotal || "0",
+        totalAmount: data.totalAmount || "0",
+        notes: data.notes || null,
+        jobParts: data.jobParts || []
+      };
+      
+      console.log("Cleaned data for API:", JSON.stringify(cleanData, null, 2));
+      const response = await apiRequest("POST", "/api/jobs", cleanData);
       console.log("Job creation response:", response);
       return response;
     },
@@ -37,7 +59,11 @@ export default function Jobs() {
     },
     onError: (error: any) => {
       console.error("Job creation failed:", error);
-      toast({ title: "Failed to create job", variant: "destructive" });
+      toast({ 
+        title: "Failed to create job", 
+        description: error?.message || "Unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 

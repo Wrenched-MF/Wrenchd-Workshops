@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -46,6 +47,8 @@ interface JobFormProps {
 
 export default function JobForm({ onSubmit, isSubmitting, initialData, initialParts }: JobFormProps) {
   const [selectedParts, setSelectedParts] = useState<JobPart[]>(initialParts || []);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [vehicleSearchOpen, setVehicleSearchOpen] = useState(false);
   
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -152,7 +155,11 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
     };
     
     console.log("Formatted data for submission:", formattedData);
-    onSubmit(formattedData);
+    try {
+      onSubmit(formattedData);
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
   };
 
   return (
@@ -172,20 +179,50 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Customer *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Customer" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? customers.find((customer) => customer.id === field.value)?.name
+                          : "Search customer..."}
+                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search customer..." />
+                      <CommandEmpty>No customer found.</CommandEmpty>
+                      <CommandGroup>
+                        {customers.map((customer) => (
+                          <CommandItem
+                            key={customer.id}
+                            value={customer.name}
+                            onSelect={() => {
+                              field.onChange(customer.id);
+                              setCustomerSearchOpen(false);
+                            }}
+                          >
+                            {customer.name}
+                            {customer.email && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                {customer.email}
+                              </span>
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
@@ -197,24 +234,53 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Vehicle *</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  disabled={!selectedCustomerId}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Vehicle" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {customerVehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={vehicleSearchOpen} onOpenChange={setVehicleSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={!selectedCustomerId}
+                        className={cn(
+                          "w-full justify-between",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? customerVehicles.find((vehicle) => vehicle.id === field.value)
+                            ? `${customerVehicles.find((vehicle) => vehicle.id === field.value)?.year} ${customerVehicles.find((vehicle) => vehicle.id === field.value)?.make} ${customerVehicles.find((vehicle) => vehicle.id === field.value)?.model}`
+                            : "Select vehicle..."
+                          : selectedCustomerId ? "Search vehicle..." : "Select customer first"}
+                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search vehicle..." />
+                      <CommandEmpty>No vehicle found.</CommandEmpty>
+                      <CommandGroup>
+                        {customerVehicles.map((vehicle) => (
+                          <CommandItem
+                            key={vehicle.id}
+                            value={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                            onSelect={() => {
+                              field.onChange(vehicle.id);
+                              setVehicleSearchOpen(false);
+                            }}
+                          >
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                            {vehicle.licensePlate && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                {vehicle.licensePlate}
+                              </span>
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
