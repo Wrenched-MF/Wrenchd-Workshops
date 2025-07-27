@@ -624,13 +624,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pdfContent = {
           title: `Purchase Order ${order.orderNumber}`,
           supplier: order.supplier.name,
+          supplierPhone: order.supplier.phone,
+          supplierEmail: order.supplier.email,
+          supplierAddress: order.supplier.address,
           orderDate: order.orderDate,
           expectedDelivery: order.expectedDelivery,
           items: order.items,
           subtotal: order.subtotal,
           tax: order.tax,
           total: order.total,
-          notes: order.notes
+          notes: order.notes,
+          orderNumber: order.orderNumber
         };
         
         res.json({ success: true, data: pdfContent });
@@ -644,11 +648,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pdfContent = {
           title: `Return ${returnItem.returnNumber}`,
           supplier: returnItem.supplier.name,
+          supplierPhone: returnItem.supplier.phone,
+          supplierEmail: returnItem.supplier.email,
+          supplierAddress: returnItem.supplier.address,
           returnDate: returnItem.returnDate,
           reason: returnItem.reason,
           items: returnItem.items,
           refundAmount: returnItem.refundAmount,
-          notes: returnItem.notes
+          notes: returnItem.notes,
+          returnNumber: returnItem.returnNumber
         };
         
         res.json({ success: true, data: pdfContent });
@@ -662,7 +670,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pdfContent = {
           title: `${quote.quoteNumber || `Quote ${quote.id.slice(0, 8)}`} - ${quote.title || 'Service'}`,
           customer: quote.customer?.name || 'Unknown',
+          customerPhone: quote.customer?.phone || '',
+          customerEmail: quote.customer?.email || '',
+          customerAddress: quote.customer?.address || '',
           vehicle: `${quote.vehicle?.year} ${quote.vehicle?.make} ${quote.vehicle?.model}`,
+          vehiclePlate: quote.vehicle?.licensePlate || '',
+          vehicleMileage: quote.vehicle?.mileage || '',
+          vehicleVin: quote.vehicle?.vin || '',
           quoteDate: quote.createdAt,
           validUntil: quote.validUntil,
           laborHours: quote.laborHours,
@@ -687,11 +701,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const pdfContent = {
           title: `Receipt ${receipt.receiptNumber}`,
-          customer: receipt.customer?.name || 'Unknown',
+          customer: receipt.job?.customer?.name || receipt.customer?.name || 'Unknown',
+          customerPhone: receipt.job?.customer?.phone || '',
+          customerEmail: receipt.job?.customer?.email || '',
+          customerAddress: receipt.job?.customer?.address || '',
+          vehicle: receipt.job?.vehicle ? `${receipt.job.vehicle.year} ${receipt.job.vehicle.make} ${receipt.job.vehicle.model}` : '',
+          vehiclePlate: receipt.job?.vehicle?.licensePlate || '',
+          vehicleMileage: receipt.job?.vehicle?.mileage || '',
           jobTitle: receipt.job?.title || 'Service',
+          jobNumber: receipt.job?.jobNumber || '',
           receiptDate: receipt.receiptDate,
           paymentMethod: receipt.paymentMethod,
           services: receipt.services || [],
+          laborHours: receipt.job?.laborHours || '',
+          laborRate: receipt.job?.laborRate || '',
+          laborTotal: receipt.job?.laborTotal || '',
+          parts: receipt.job?.parts || [],
+          partsTotal: receipt.job?.partsTotal || '',
           total: receipt.totalAmount,
           notes: receipt.notes
         };

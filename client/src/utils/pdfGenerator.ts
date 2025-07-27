@@ -200,10 +200,10 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       yPosition += 15;
       
       if (type === 'purchase-order') {
-        // Order details section
+        // Supplier Information
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
-        doc.text('Order Details:', 15, yPosition);
+        doc.text('Supplier Information:', 15, yPosition);
         yPosition += 8;
         
         doc.setFontSize(fontSize);
@@ -211,7 +211,18 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
         doc.text(`Order Date: ${new Date(data.orderDate).toLocaleDateString()}`, 110, yPosition);
         yPosition += 6;
-        
+        if (data.supplierPhone) {
+          doc.text(`Phone: ${data.supplierPhone}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.supplierEmail) {
+          doc.text(`Email: ${data.supplierEmail}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.supplierAddress) {
+          doc.text(`Address: ${data.supplierAddress}`, 15, yPosition);
+          yPosition += 6;
+        }
         if (data.expectedDelivery) {
           doc.text(`Expected Delivery: ${new Date(data.expectedDelivery).toLocaleDateString()}`, 15, yPosition);
           yPosition += 6;
@@ -255,10 +266,10 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(`Total: £${data.total}`, 140, yPosition);
         
       } else if (type === 'return') {
-        // Return details section
+        // Supplier Information
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
-        doc.text('Return Details:', 15, yPosition);
+        doc.text('Supplier Information:', 15, yPosition);
         yPosition += 8;
         
         doc.setFontSize(fontSize);
@@ -266,6 +277,18 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
         doc.text(`Return Date: ${new Date(data.returnDate).toLocaleDateString()}`, 110, yPosition);
         yPosition += 6;
+        if (data.supplierPhone) {
+          doc.text(`Phone: ${data.supplierPhone}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.supplierEmail) {
+          doc.text(`Email: ${data.supplierEmail}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.supplierAddress) {
+          doc.text(`Address: ${data.supplierAddress}`, 15, yPosition);
+          yPosition += 6;
+        }
         doc.text(`Reason: ${data.reason || 'Not specified'}`, 15, yPosition);
         yPosition += 10;
         
@@ -300,19 +323,49 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         doc.text(`Refund Amount: £${data.refundAmount}`, 140, yPosition);
         
       } else if (type === 'quote') {
-        // Quote details section
+        // Customer & Vehicle Information
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
-        doc.text('Quote Details:', 15, yPosition);
+        doc.text('Customer Information:', 15, yPosition);
         yPosition += 8;
         
         doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Customer: ${data.customer}`, 15, yPosition);
+        doc.text(`Name: ${data.customer}`, 15, yPosition);
         doc.text(`Quote Date: ${new Date(data.quoteDate).toLocaleDateString()}`, 110, yPosition);
         yPosition += 6;
+        if (data.customerPhone) {
+          doc.text(`Phone: ${data.customerPhone}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.customerEmail) {
+          doc.text(`Email: ${data.customerEmail}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.customerAddress) {
+          doc.text(`Address: ${data.customerAddress}`, 15, yPosition);
+          yPosition += 6;
+        }
+        
+        yPosition += 5;
+        doc.setFontSize(fontSize + 2);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Vehicle Information:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', 'normal');
         doc.text(`Vehicle: ${data.vehicle}`, 15, yPosition);
         doc.text(`Valid Until: ${new Date(data.validUntil).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 6;
+        if (data.vehiclePlate) {
+          doc.text(`Registration: ${data.vehiclePlate}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.vehicleMileage) {
+          doc.text(`Mileage: ${data.vehicleMileage}`, 15, yPosition);
+          yPosition += 6;
+        }
         yPosition += 10;
         
         // Labor section
@@ -358,40 +411,134 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
           yPosition += 5;
         }
         
-        // Totals section
+        // Quote totals section
         yPosition += 10;
         doc.line(140, yPosition, 195, yPosition);
         yPosition += 5;
         doc.setFontSize(fontSize);
-        doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
-        yPosition += 6;
-        doc.text(`Tax: £${data.tax}`, 140, yPosition);
-        yPosition += 6;
+        if (data.partsTotal) {
+          doc.text(`Parts Total: £${data.partsTotal}`, 140, yPosition);
+          yPosition += 6;
+        }
+        if (data.laborTotal) {
+          doc.text(`Labor Total: £${data.laborTotal}`, 140, yPosition);
+          yPosition += 6;
+        }
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Total: £${data.total}`, 140, yPosition);
+        doc.text(`Total Estimate: £${data.totalAmount}`, 140, yPosition);
         
       } else if (type === 'receipt') {
-        // Receipt details section
+        // Customer Information
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
-        doc.text('Receipt Details:', 15, yPosition);
+        doc.text('Customer Information:', 15, yPosition);
         yPosition += 8;
         
         doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Customer: ${data.customer}`, 15, yPosition);
+        doc.text(`Name: ${data.customer}`, 15, yPosition);
         doc.text(`Receipt Date: ${new Date(data.receiptDate).toLocaleDateString()}`, 110, yPosition);
         yPosition += 6;
-        doc.text(`Job: ${data.jobTitle}`, 15, yPosition);
-        doc.text(`Payment Method: ${data.paymentMethod}`, 110, yPosition);
+        if (data.customerPhone) {
+          doc.text(`Phone: ${data.customerPhone}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.customerEmail) {
+          doc.text(`Email: ${data.customerEmail}`, 15, yPosition);
+          yPosition += 6;
+        }
+        if (data.customerAddress) {
+          doc.text(`Address: ${data.customerAddress}`, 15, yPosition);
+          yPosition += 6;
+        }
+        
+        // Vehicle Information
+        if (data.vehicle) {
+          yPosition += 5;
+          doc.setFontSize(fontSize + 2);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Vehicle Information:', 15, yPosition);
+          yPosition += 8;
+          
+          doc.setFontSize(fontSize);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Vehicle: ${data.vehicle}`, 15, yPosition);
+          doc.text(`Payment Method: ${data.paymentMethod}`, 110, yPosition);
+          yPosition += 6;
+          if (data.vehiclePlate) {
+            doc.text(`Registration: ${data.vehiclePlate}`, 15, yPosition);
+            yPosition += 6;
+          }
+          if (data.vehicleMileage) {
+            doc.text(`Mileage: ${data.vehicleMileage}`, 15, yPosition);
+            yPosition += 6;
+          }
+        }
+        
+        // Job Information
+        yPosition += 5;
+        doc.setFontSize(fontSize + 2);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Service Details:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Service: ${data.jobTitle}`, 15, yPosition);
+        if (data.jobNumber) {
+          doc.text(`Job Number: ${data.jobNumber}`, 110, yPosition);
+        }
         yPosition += 10;
         
-        // Services section
+        // Labor section
+        if (data.laborHours && data.laborRate) {
+          doc.setFontSize(fontSize + 1);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Labor:', 15, yPosition);
+          yPosition += 6;
+          doc.setFontSize(fontSize);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Hours: ${data.laborHours}`, 20, yPosition);
+          doc.text(`Rate: £${data.laborRate}/hour`, 80, yPosition);
+          doc.text(`Labor Total: £${data.laborTotal}`, 150, yPosition);
+          yPosition += 10;
+        }
+        
+        // Parts section
+        if (data.parts && data.parts.length > 0) {
+          doc.setFontSize(fontSize + 1);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Parts Used:', 15, yPosition);
+          yPosition += 6;
+          
+          // Parts table header
+          doc.setFontSize(fontSize);
+          doc.setFillColor(240, 240, 240);
+          doc.rect(15, yPosition, 180, 8, 'F');
+          doc.text('Part', 20, yPosition + 5);
+          doc.text('Qty', 120, yPosition + 5);
+          doc.text('Unit Price', 140, yPosition + 5);
+          doc.text('Total', 170, yPosition + 5);
+          yPosition += 10;
+          
+          // Parts
+          doc.setFont('helvetica', 'normal');
+          data.parts.forEach((part: any) => {
+            doc.text(part.name, 20, yPosition);
+            doc.text(part.quantity.toString(), 125, yPosition);
+            doc.text(`£${part.unitPrice}`, 145, yPosition);
+            doc.text(`£${part.totalPrice}`, 175, yPosition);
+            yPosition += 6;
+          });
+          yPosition += 5;
+        }
+        
+        // Services section (if any additional services)
         if (data.services && data.services.length > 0) {
           doc.setFontSize(fontSize + 1);
           doc.setFont('helvetica', 'bold');
-          doc.text('Services:', 15, yPosition);
+          doc.text('Additional Services:', 15, yPosition);
           yPosition += 6;
           
           doc.setFontSize(fontSize);
@@ -408,6 +555,15 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         yPosition += 10;
         doc.line(140, yPosition, 195, yPosition);
         yPosition += 5;
+        if (data.partsTotal) {
+          doc.setFontSize(fontSize);
+          doc.text(`Parts Total: £${data.partsTotal}`, 140, yPosition);
+          yPosition += 6;
+        }
+        if (data.laborTotal) {
+          doc.text(`Labor Total: £${data.laborTotal}`, 140, yPosition);
+          yPosition += 6;
+        }
         doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text(`Total Paid: £${data.total}`, 140, yPosition);
