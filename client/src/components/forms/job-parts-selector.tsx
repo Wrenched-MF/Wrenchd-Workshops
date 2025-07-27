@@ -1,9 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, X, Package, Search } from "lucide-react";
+import { Plus, X, Package, Search, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertInventoryItemSchema, type InventoryItem, type InsertInventoryItem } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
 interface JobPart {
   inventoryItemId: string;
@@ -34,6 +34,10 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
   const [quantity, setQuantity] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const { data: inventoryItems = [] } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
@@ -106,6 +110,8 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
     // Reset form
     setSelectedPartId("");
     setQuantity(1);
+    setSearchTerm("");
+    setShowSuggestions(false);
   };
 
   const removePart = (index: number) => {
@@ -139,10 +145,73 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
     createItemMutation.mutate(data);
   };
 
+  const handleSelectPart = (item: InventoryItem) => {
+    setSelectedPartId(item.id);
+    setSearchTerm(item.name);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || filteredItems.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < filteredItems.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : prev);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          handleSelectPart(filteredItems[selectedSuggestionIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  const handleSearchFocus = () => {
+    setShowSuggestions(true);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setSelectedPartId("");
+    setShowSuggestions(true);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const selectedItem = inventoryItems.find(item => item.id === selectedPartId);
   const canAddPart = selectedPartId && quantity > 0 && selectedItem;
   const hasSearchResults = filteredItems.length > 0;
-  const showCreateOption = searchTerm.trim() && !hasSearchResults;
+  const showCreateOption = searchTerm.trim() && !hasSearchResults && !showSuggestions;
 
   return (
     <Card>
@@ -153,67 +222,128 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search and Add Part Form */}
+        {/* Dynamic Search and Add Part Form */}
         <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-          {/* Search Input */}
+          {/* Dynamic Search Input with Suggestions */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search parts by name or part number..."
+              ref={searchInputRef}
+              placeholder="Type to search parts by name or part number..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setSelectedPartId(""); // Clear selection when searching
-              }}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={handleSearchFocus}
+              onKeyDown={handleKeyDown}
               className="pl-9"
             />
+            
+            {/* Dynamic Suggestions Dropdown */}
+            {showSuggestions && (searchTerm.trim() || filteredItems.length > 0) && (
+              <div 
+                ref={suggestionsRef}
+                className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-80 overflow-y-auto"
+              >
+                {filteredItems.length > 0 ? (
+                  <div className="py-1">
+                    {filteredItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50",
+                          selectedSuggestionIndex === index && "bg-blue-50 border-l-2 border-l-blue-500"
+                        )}
+                        onClick={() => handleSelectPart(item)}
+                      >
+                        {/* Part Image */}
+                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden border">
+                          {item.imageUrl ? (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling!.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={cn(
+                            "w-full h-full flex items-center justify-center",
+                            item.imageUrl && "hidden"
+                          )}>
+                            <ImageIcon className="w-6 h-6 text-gray-400" />
+                          </div>
+                        </div>
+                        
+                        {/* Part Details */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            {item.partNumber && (
+                              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                {item.partNumber}
+                              </span>
+                            )}
+                            <span>Stock: {item.quantity}</span>
+                            <span className="font-semibold text-green-600">£{item.retailPrice}</span>
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-gray-400 truncate mt-1">{item.description}</p>
+                          )}
+                        </div>
+                        
+                        {/* Selection Indicator */}
+                        {selectedPartId === item.id && (
+                          <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : searchTerm.trim() && (
+                  <div className="px-3 py-8 text-center text-gray-500">
+                    <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm font-medium">No parts found</p>
+                    <p className="text-xs">Try a different search term</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="md:col-span-2">
-              <Select value={selectedPartId} onValueChange={setSelectedPartId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={
-                    searchTerm 
-                      ? hasSearchResults 
-                        ? `${filteredItems.length} parts found - select one`
-                        : "No parts found"
-                      : "Search or select part from inventory..."
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.name}</span>
-                        <span className="text-sm text-gray-500">
-                          {item.partNumber && `${item.partNumber} • `}
-                          Stock: {item.quantity} • £{item.retailPrice}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-1">
+              <div className="text-sm text-gray-600">
+                {selectedItem ? (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                    <Check className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-blue-900">{selectedItem.name}</span>
+                  </div>
+                ) : (
+                  <div className="p-2 text-center text-gray-400 border border-dashed border-gray-300 rounded">
+                    {searchTerm ? "Select from suggestions above" : "Start typing to search parts"}
+                  </div>
+                )}
+              </div>
             </div>
-          
-          <Input
-            type="number"
-            placeholder="Qty"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-          />
-          
-          <Button 
-            onClick={addPart} 
-            disabled={!canAddPart}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Part
-          </Button>
-        </div>
+            
+            <Input
+              type="number"
+              placeholder="Qty"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+            />
+            
+            <Button 
+              onClick={addPart} 
+              disabled={!canAddPart}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Part
+            </Button>
+          </div>
 
         {/* Create New Part Option */}
         {showCreateOption && (
