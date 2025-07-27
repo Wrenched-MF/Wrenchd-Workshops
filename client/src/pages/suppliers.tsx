@@ -13,6 +13,7 @@ import SupplierForm from "@/components/forms/supplier-form";
 import PurchaseOrderForm from "@/components/forms/purchase-order-form";
 import ReturnForm from "@/components/forms/return-form";
 import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Supplier, PurchaseOrderWithDetails, ReturnWithDetails, InventoryItem } from "@shared/schema";
 
@@ -21,6 +22,7 @@ export default function Suppliers() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false);
+  const { toast } = useToast();
 
   const { data: suppliers = [], isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
@@ -54,18 +56,44 @@ export default function Suppliers() {
   });
 
   const createPurchaseOrderMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/purchase-orders", "POST", data),
+    mutationFn: (data: any) => {
+      console.log("Creating purchase order with data:", data);
+      return apiRequest("/api/purchase-orders", "POST", data);
+    },
     onSuccess: () => {
+      console.log("Purchase order created successfully");
       queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
+      toast({ title: "Purchase order created successfully" });
       setShowPurchaseOrderForm(false);
+    },
+    onError: (error: any) => {
+      console.error("Failed to create purchase order:", error);
+      toast({ 
+        title: "Failed to create purchase order", 
+        description: error?.message || "Unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 
   const createReturnMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/returns", "POST", data),
+    mutationFn: (data: any) => {
+      console.log("Creating return with data:", data);
+      return apiRequest("/api/returns", "POST", data);
+    },
     onSuccess: () => {
+      console.log("Return created successfully");
       queryClient.invalidateQueries({ queryKey: ["/api/returns"] });
+      toast({ title: "Return created successfully" });
       setShowReturnForm(false);
+    },
+    onError: (error: any) => {
+      console.error("Failed to create return:", error);
+      toast({ 
+        title: "Failed to create return", 
+        description: error?.message || "Unknown error occurred",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -273,7 +301,7 @@ export default function Suppliers() {
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{new Date(order.orderDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Not set'}</TableCell>
                         <TableCell>
                           {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : 'Not set'}
                         </TableCell>
@@ -389,7 +417,7 @@ export default function Suppliers() {
                             {returnItem.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{new Date(returnItem.returnDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{returnItem.returnDate ? new Date(returnItem.returnDate).toLocaleDateString() : 'Not set'}</TableCell>
                         <TableCell className="max-w-xs truncate">{returnItem.reason}</TableCell>
                         <TableCell>£{returnItem.refundAmount}</TableCell>
                         <TableCell>
