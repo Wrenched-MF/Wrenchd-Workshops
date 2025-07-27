@@ -773,7 +773,7 @@ export const previewPDF = async (type: string, id: string) => {
       // Document Info Header (right aligned)
       doc.setFontSize(fontSize + 4);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...accentColor);
+      doc.setTextColor(accentColor.r, accentColor.g, accentColor.b);
       doc.text(data.documentType || 'RECEIPT', 195, yPosition, { align: 'right' });
       yPosition += 8;
       
