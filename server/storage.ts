@@ -13,8 +13,9 @@ import {
   type ReturnItem, type InsertReturnItem,
   type Receipt, type InsertReceipt,
   type BusinessSettings, type InsertBusinessSettings,
+  type CustomTemplate, type InsertCustomTemplate,
   customers, vehicles, suppliers, inventoryItems, jobs, jobParts, quotes, quoteParts, 
-  purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, businessSettings
+  purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, businessSettings, customTemplates
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, lt } from "drizzle-orm";
@@ -111,6 +112,15 @@ export interface IStorage {
   // Business Settings
   getBusinessSettings(): Promise<BusinessSettings | undefined>;
   updateBusinessSettings(settings: InsertBusinessSettings): Promise<BusinessSettings>;
+
+  // Custom Templates
+  getCustomTemplates(): Promise<CustomTemplate[]>;
+  getCustomTemplate(id: string): Promise<CustomTemplate | undefined>;
+  createCustomTemplate(template: InsertCustomTemplate): Promise<CustomTemplate>;
+  updateCustomTemplate(id: string, updates: Partial<InsertCustomTemplate>): Promise<CustomTemplate>;
+  deleteCustomTemplate(id: string): Promise<void>;
+  activateCustomTemplate(id: string): Promise<CustomTemplate>;
+  getActiveCustomTemplate(): Promise<CustomTemplate | null>;
 
   // Users (from existing schema)
   getUser(id: string): Promise<any>;
@@ -691,6 +701,69 @@ export class DatabaseStorage implements IStorage {
       .where(eq(businessSettings.id, existing.id))
       .returning();
     return updated;
+  }
+
+  // Custom Templates
+  async getCustomTemplates(): Promise<CustomTemplate[]> {
+    return await db.select().from(customTemplates);
+  }
+
+  async getCustomTemplate(id: string): Promise<CustomTemplate | undefined> {
+    const [template] = await db.select().from(customTemplates).where(eq(customTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createCustomTemplate(template: InsertCustomTemplate): Promise<CustomTemplate> {
+    const [created] = await db
+      .insert(customTemplates)
+      .values(template)
+      .returning();
+    return created;
+  }
+
+  async updateCustomTemplate(id: string, updates: Partial<InsertCustomTemplate>): Promise<CustomTemplate> {
+    const [updated] = await db
+      .update(customTemplates)
+      .set(updates)
+      .where(eq(customTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCustomTemplate(id: string): Promise<void> {
+    await db.delete(customTemplates).where(eq(customTemplates.id, id));
+  }
+
+  async activateCustomTemplate(id: string): Promise<CustomTemplate> {
+    // First, deactivate all templates of the same type
+    const template = await this.getCustomTemplate(id);
+    if (!template) {
+      throw new Error("Template not found");
+    }
+
+    // Deactivate all templates of this type
+    await db
+      .update(customTemplates)
+      .set({ isActive: false })
+      .where(eq(customTemplates.templateType, template.templateType));
+
+    // Activate the selected template
+    const [activated] = await db
+      .update(customTemplates)
+      .set({ isActive: true })
+      .where(eq(customTemplates.id, id))
+      .returning();
+
+    return activated;
+  }
+
+  async getActiveCustomTemplate(): Promise<CustomTemplate | null> {
+    const [template] = await db
+      .select()
+      .from(customTemplates)
+      .where(eq(customTemplates.isActive, true))
+      .limit(1);
+    return template || null;
   }
 
   // Users (legacy compatibility)

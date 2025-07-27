@@ -5,7 +5,7 @@ import {
   insertCustomerSchema, insertVehicleSchema, insertSupplierSchema, 
   insertInventoryItemSchema, insertJobSchema, insertQuoteSchema,
   insertPurchaseOrderSchema, insertReturnSchema,
-  insertBusinessSettingsSchema 
+  insertBusinessSettingsSchema, insertCustomTemplateSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -627,6 +627,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       res.status(400).json({ message: "Invalid business settings data" });
+    }
+  });
+
+  // Custom Templates Routes
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const templates = await storage.getCustomTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/templates", async (req, res) => {
+    try {
+      const templateData = insertCustomTemplateSchema.parse(req.body);
+      const template = await storage.createCustomTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.put("/api/templates/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const templateData = insertCustomTemplateSchema.parse(req.body);
+      const template = await storage.updateCustomTemplate(id, templateData);
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  app.delete("/api/templates/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      await storage.deleteCustomTemplate(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  app.post("/api/templates/:id/activate", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const template = await storage.activateCustomTemplate(id);
+      res.json(template);
+    } catch (error) {
+      console.error("Error activating template:", error);
+      res.status(500).json({ error: "Failed to activate template" });
+    }
+  });
+
+  app.get("/api/templates/active", async (req, res) => {
+    try {
+      const template = await storage.getActiveCustomTemplate();
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching active template:", error);
+      res.status(500).json({ error: "Failed to fetch active template" });
     }
   });
 

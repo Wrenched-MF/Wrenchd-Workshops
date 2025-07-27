@@ -180,6 +180,28 @@ export const receipts = pgTable("receipts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Custom PDF Templates
+export const customTemplates = pgTable("custom_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateName: text("template_name").notNull(),
+  templateType: text("template_type").notNull(), // 'receipt', 'quote', 'purchase-order', 'return'
+  companyName: text("company_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  logoUrl: text("logo_url"),
+  headerText: text("header_text"),
+  footerText: text("footer_text").notNull(),
+  termsConditions: text("terms_conditions"),
+  primaryColor: text("primary_color").notNull(),
+  secondaryColor: text("secondary_color").notNull(),
+  showCompanyLogo: boolean("show_company_logo").default(true),
+  showCompanyDetails: boolean("show_company_details").default(true),
+  isActive: boolean("is_active").default(false), // Whether this template is currently selected for use
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const businessSettings = pgTable("business_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   businessName: text("business_name"),
@@ -197,6 +219,7 @@ export const businessSettings = pgTable("business_settings", {
   showLogo: boolean("show_logo").default(true),
   footerText: text("footer_text"),
   headerLayout: text("header_layout").default("standard"),
+  activeTemplateId: varchar("active_template_id").references(() => customTemplates.id), // Reference to active custom template
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -368,6 +391,12 @@ export const insertBusinessSettingsSchema = createInsertSchema(businessSettings)
   updatedAt: true,
 });
 
+export const insertCustomTemplateSchema = createInsertSchema(customTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Zod schemas for purchase orders and returns
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
   id: true,
@@ -434,6 +463,9 @@ export type InsertReceipt = z.infer<typeof insertReceiptSchema>;
 
 export type BusinessSettings = typeof businessSettings.$inferSelect;
 export type InsertBusinessSettings = z.infer<typeof insertBusinessSettingsSchema>;
+
+export type CustomTemplate = typeof customTemplates.$inferSelect;
+export type InsertCustomTemplate = z.infer<typeof insertCustomTemplateSchema>;
 
 // Extended types with relations
 export type JobWithDetails = Job & {

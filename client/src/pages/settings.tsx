@@ -28,6 +28,57 @@ export default function Settings() {
     queryKey: ["/api/settings/business"],
   });
 
+  const { data: customTemplates, isLoading: templatesLoading } = useQuery({
+    queryKey: ["/api/templates"],
+  });
+
+  const activateTemplateMutation = useMutation({
+    mutationFn: async (templateId: string) => {
+      const response = await fetch(`/api/templates/${templateId}/activate`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to activate template');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+      toast({
+        title: "Template activated",
+        description: "This template is now being used for your documents.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to activate template. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (templateId: string) => {
+      const response = await fetch(`/api/templates/${templateId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete template');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+      toast({
+        title: "Template deleted",
+        description: "The custom template has been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete template. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateSettingsMutation = useMutation({
     mutationFn: (data: InsertBusinessSettings) => 
       apiRequest("PUT", "/api/settings/business", data),
@@ -309,6 +360,57 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
+                {/* Custom Templates */}
+                {customTemplates && customTemplates.length > 0 && (
+                  <div className="space-y-4">
+                    {customTemplates.map((template: any) => (
+                      <Card key={template.id} className="border border-gray-200">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <FileText className="w-8 h-8 text-blue-500" />
+                              <div>
+                                <h4 className="font-medium text-gray-900">{template.templateName}</h4>
+                                <p className="text-sm text-gray-500">
+                                  {template.templateType.charAt(0).toUpperCase() + template.templateType.slice(1)} template
+                                </p>
+                                <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${
+                                  template.isActive 
+                                    ? 'text-green-700 bg-green-100' 
+                                    : 'text-gray-600 bg-gray-100'
+                                }`}>
+                                  {template.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {!template.isActive && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => activateTemplateMutation.mutate(template.id)}
+                                  disabled={activateTemplateMutation.isPending}
+                                >
+                                  Activate
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => deleteTemplateMutation.mutate(template.id)}
+                                disabled={deleteTemplateMutation.isPending}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
                 {/* Create Custom Template Button */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <Plus className="mx-auto h-8 w-8 text-gray-400 mb-4" />
@@ -350,13 +452,39 @@ export default function Settings() {
       <TemplateEditorModal
         open={isTemplateEditorOpen}
         onClose={() => setIsTemplateEditorOpen(false)}
-        onSave={(templateData) => {
-          console.log('Template saved:', templateData);
-          toast({
-            title: "Template saved",
-            description: "Your custom template has been created successfully.",
-          });
-          setIsTemplateEditorOpen(false);
+        onSave={async (templateData) => {
+          try {
+            const response = await fetch('/api/templates', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(templateData),
+            });
+            
+            if (response.ok) {
+              toast({
+                title: "Template saved",
+                description: "Your custom template has been created successfully.",
+              });
+              setIsTemplateEditorOpen(false);
+              // Refetch templates to update the list
+              queryClient.invalidateQueries({ queryKey: ['/api/templates'] });
+            } else {
+              toast({
+                title: "Error",
+                description: "Failed to save template. Please try again.",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error('Error saving template:', error);
+            toast({
+              title: "Error",
+              description: "Failed to save template. Please try again.",
+              variant: "destructive",
+            });
+          }
         }}
         initialData={{
           companyName: businessSettings?.businessName || "WRENCH'D Auto Repairs",
