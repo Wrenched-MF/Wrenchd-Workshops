@@ -35,6 +35,17 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
     
     console.log('PDF response:', response);
     console.log('Template settings:', settings);
+    console.log('Settings breakdown:', {
+      headerColor: settings.headerColor,
+      accentColor: settings.accentColor,
+      headerFontSize: settings.headerFontSize,
+      fontSize: settings.fontSize,
+      showLogo: settings.showLogo,
+      logoPosition: settings.logoPosition,
+      headerLayout: settings.headerLayout,
+      footerText: settings.footerText,
+      logoUrl: settings.logoUrl ? 'Present' : 'Missing'
+    });
     
     if (response && response.success) {
       const { jsPDF } = await import('jspdf');
@@ -43,7 +54,7 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       const data = response.data;
       console.log('PDF data:', data);
       
-      // Apply template settings
+      // Apply template settings with more detailed debugging
       const headerColor = hexToRgb(settings.headerColor || '#000000');
       const accentColor = hexToRgb(settings.accentColor || '#22c55e');
       const headerFontSize = settings.headerFontSize || 20;
@@ -51,6 +62,16 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       const showLogo = settings.showLogo !== false;
       const logoPosition = settings.logoPosition || 'left';
       const headerLayout = settings.headerLayout || 'standard';
+      
+      console.log('Applied settings:', {
+        headerColor: `rgb(${headerColor.r}, ${headerColor.g}, ${headerColor.b})`,
+        accentColor: `rgb(${accentColor.r}, ${accentColor.g}, ${accentColor.b})`,
+        headerFontSize,
+        fontSize,
+        showLogo,
+        logoPosition,
+        headerLayout
+      });
       
       let yPosition = 15;
       let logoWidth = 0;
