@@ -88,10 +88,13 @@ export default function Jobs() {
               Add Job
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="job-form-description">
             <DialogHeader>
               <DialogTitle>Create New Job</DialogTitle>
             </DialogHeader>
+            <div id="job-form-description" className="sr-only">
+              Fill out the form below to create a new service job for a customer's vehicle.
+            </div>
             <JobForm 
               onSubmit={(data) => createJobMutation.mutate(data)}
               isSubmitting={createJobMutation.isPending}
