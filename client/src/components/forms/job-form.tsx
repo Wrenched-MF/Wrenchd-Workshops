@@ -131,18 +131,19 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
       customerId: data.customerId || "",
       vehicleId: data.vehicleId || "",
       title: data.title || "",
-      description: data.description || "",
+      description: data.description || null,
       status: data.status || "scheduled",
-      scheduledDate: data.scheduledDate ? (data.scheduledDate instanceof Date ? data.scheduledDate.toISOString() : data.scheduledDate) : null,
-      completedDate: data.completedDate ? (data.completedDate instanceof Date ? data.completedDate.toISOString() : data.completedDate) : null,
+      scheduledDate: data.scheduledDate || null,
+      completedDate: data.completedDate || null,
       serviceBayId: data.serviceBayId === "none" || !data.serviceBayId ? null : data.serviceBayId,
+      scheduledStartTime: data.scheduledStartTime || null,
       // Convert string inputs to proper format
       laborHours: data.laborHours?.toString() || "0",
       laborRate: data.laborRate?.toString() || "50.00",
       partsTotal: data.partsTotal?.toString() || "0",
       laborTotal: data.laborTotal?.toString() || "0", 
       totalAmount: data.totalAmount?.toString() || "0",
-      notes: data.notes || "",
+      notes: data.notes || null,
       photos: data.photos || [],
       jobParts: selectedParts,
     };
@@ -356,7 +357,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Start Time</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select time" />
