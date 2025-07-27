@@ -770,18 +770,120 @@ export const previewPDF = async (type: string, id: string) => {
       
       yPosition += 15;
       
-      // Basic content preview with template font size
+      // Document Info Header (right aligned)
+      doc.setFontSize(fontSize + 4);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...accentColor);
+      doc.text(data.documentType || 'RECEIPT', 195, yPosition, { align: 'right' });
+      yPosition += 8;
+      
       doc.setFontSize(fontSize);
       doc.setFont('helvetica', 'normal');
-      doc.text('Preview - Actual content will vary based on document data', 15, yPosition);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Receipt #: ${data.receiptNumber || 'N/A'}`, 195, yPosition, { align: 'right' });
+      yPosition += 6;
+      doc.text(`Date: ${data.date || new Date().toLocaleDateString('en-GB')}`, 195, yPosition, { align: 'right' });
+      yPosition += 15;
+      
+      // Customer & Vehicle Information - Professional Layout
+      doc.setFontSize(fontSize + 1);
+      doc.setFont('helvetica', 'bold');
+      doc.setFillColor(250, 250, 250);
+      doc.rect(15, yPosition - 3, 85, 8, 'F');
+      doc.text('Bill To:', 18, yPosition + 2);
+      doc.rect(110, yPosition - 3, 85, 8, 'F');
+      doc.text('Vehicle Details:', 113, yPosition + 2);
+      yPosition += 12;
+      
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${data.customer || 'Customer Name'}`, 15, yPosition);
+      doc.text(`${data.vehicleYear || ''} ${data.vehicleMake || ''} ${data.vehicleModel || ''}`, 110, yPosition);
+      yPosition += 6;
+      if (data.customerPhone) {
+        doc.text(`Phone: ${data.customerPhone}`, 15, yPosition);
+      }
+      if (data.vehicleRegistration) {
+        doc.text(`Registration: ${data.vehicleRegistration}`, 110, yPosition);
+      }
+      yPosition += 6;
+      if (data.customerEmail) {
+        doc.text(`Email: ${data.customerEmail}`, 15, yPosition);
+      }
+      if (data.vehicleMileage) {
+        doc.text(`Mileage: ${data.vehicleMileage}`, 110, yPosition);
+      }
+      yPosition += 6;
+      if (data.customerAddress) {
+        const addressLines = doc.splitTextToSize(data.customerAddress, 85);
+        doc.text(addressLines, 15, yPosition);
+        yPosition += addressLines.length * 6;
+      }
+      
+      yPosition += 15;
+      
+      // Work Description
+      if (data.jobDescription) {
+        doc.setFontSize(fontSize + 1);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Work Performed:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', 'normal');
+        const descriptionLines = doc.splitTextToSize(data.jobDescription, 180);
+        doc.text(descriptionLines, 15, yPosition);
+        yPosition += descriptionLines.length * 6 + 10;
+      }
+      
+      // Items table header
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', 'bold');
+      doc.setFillColor(240, 240, 240);
+      doc.rect(15, yPosition, 180, 8, 'F');
+      doc.text('Description', 20, yPosition + 5);
+      doc.text('Qty', 120, yPosition + 5);
+      doc.text('Price', 145, yPosition + 5);
+      doc.text('Total', 170, yPosition + 5);
       yPosition += 10;
       
-      // Show template styling preview
-      doc.setFontSize(fontSize - 2);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Template: ${headerLayout} layout, ${fontSize}pt font`, 15, yPosition);
-      yPosition += 6;
-      doc.text(`Colors: Header ${templateSettings.headerColor || templateSettings.primaryColor || '#000000'}, Accent ${templateSettings.accentColor || templateSettings.secondaryColor || '#22c55e'}`, 15, yPosition);
+      // Labor row
+      doc.setFont('helvetica', 'normal');
+      if (data.laborHours && data.laborRate) {
+        doc.text(`Labor (${data.laborHours} hours)`, 20, yPosition);
+        doc.text(data.laborHours.toString(), 125, yPosition);
+        doc.text(`£${data.laborRate}`, 150, yPosition);
+        doc.text(`£${data.laborTotal}`, 175, yPosition);
+        yPosition += 6;
+      }
+      
+      // Parts rows
+      if (data.parts && data.parts.length > 0) {
+        data.parts.forEach((part: any) => {
+          doc.text(part.name || 'Part', 20, yPosition);
+          doc.text(part.quantity?.toString() || '1', 125, yPosition);
+          doc.text(`£${part.unitPrice || '0.00'}`, 150, yPosition);
+          doc.text(`£${part.totalPrice || '0.00'}`, 175, yPosition);
+          yPosition += 6;
+        });
+      }
+      
+      // Totals section
+      yPosition += 10;
+      doc.line(140, yPosition, 195, yPosition);
+      yPosition += 5;
+      doc.setFontSize(fontSize);
+      if (data.subtotal) {
+        doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
+        yPosition += 6;
+      }
+      if (data.vatAmount) {
+        doc.text(`VAT (${data.vatRate || 20}%): £${data.vatAmount}`, 140, yPosition);
+        yPosition += 6;
+      }
+      doc.setFontSize(fontSize + 2);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total: £${data.total || '0.00'}`, 140, yPosition);
       
       // Add footer if specified (use template footer or fallback)
       const footerText = templateSettings.footerText || settings.footerText;
