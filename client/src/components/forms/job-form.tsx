@@ -95,11 +95,11 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
     console.log("Form errors:", form.formState.errors);
     console.log("Selected parts:", selectedParts);
     
-    // Ensure dates are properly formatted as Date objects
+    // Ensure dates are properly formatted - they should already be Date objects from the form
     const formattedData = {
       ...data,
-      scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : null,
-      completedDate: data.completedDate ? new Date(data.completedDate) : null,
+      scheduledDate: data.scheduledDate || null,
+      completedDate: data.completedDate || null,
       jobParts: selectedParts,
     };
     console.log("Formatted data:", formattedData);
@@ -254,7 +254,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
+                      onSelect={(date) => field.onChange(date)}
                       disabled={(date) => date < new Date("1900-01-01")}
                       initialFocus
                     />

@@ -366,6 +366,9 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit
 export const insertJobSchema = createInsertSchema(jobs).omit({
   id: true,
   createdAt: true,
+}).extend({
+  scheduledDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
+  completedDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
 });
 
 export const insertJobPartSchema = createInsertSchema(jobParts).omit({
