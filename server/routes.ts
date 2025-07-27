@@ -881,27 +881,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Receipt not found" });
         }
         
+        // Fetch the complete job details with customer and vehicle information
+        let job = null;
+        if (receipt.jobId) {
+          job = await storage.getJob(receipt.jobId);
+        }
+        
         const pdfContent = {
           title: `Receipt ${receipt.receiptNumber}`,
-          customer: receipt.job?.customer?.name || receipt.customer?.name || 'Unknown',
-          customerPhone: receipt.job?.customer?.phone || '',
-          customerEmail: receipt.job?.customer?.email || '',
-          customerAddress: receipt.job?.customer?.address || '',
-          vehicle: receipt.job?.vehicle ? `${receipt.job.vehicle.year} ${receipt.job.vehicle.make} ${receipt.job.vehicle.model}` : '',
-          vehiclePlate: receipt.job?.vehicle?.licensePlate || '',
-          vehicleMileage: receipt.job?.vehicle?.mileage || '',
-          jobTitle: receipt.job?.title || 'Service',
-          jobNumber: receipt.job?.jobNumber || '',
-          receiptDate: receipt.receiptDate,
-          paymentMethod: receipt.paymentMethod,
-          services: receipt.services || [],
-          laborHours: receipt.job?.laborHours || '',
-          laborRate: receipt.job?.laborRate || '',
-          laborTotal: receipt.job?.laborTotal || '',
-          parts: receipt.job?.parts || [],
-          partsTotal: receipt.job?.partsTotal || '',
-          total: receipt.totalAmount,
-          notes: receipt.notes
+          customer: job?.customer?.name || 'Unknown',
+          customerPhone: job?.customer?.phone || '',
+          customerEmail: job?.customer?.email || '',
+          customerAddress: job?.customer?.address || '',
+          vehicle: job?.vehicle ? `${job.vehicle.year} ${job.vehicle.make} ${job.vehicle.model}` : '',
+          vehiclePlate: job?.vehicle?.licensePlate || '',
+          vehicleMileage: job?.vehicle?.mileage || '',
+          jobTitle: job?.title || 'Service',
+          jobNumber: job?.jobNumber || '',
+          receiptDate: receipt.createdAt || new Date(),
+          paymentMethod: 'Cash', // Default since not stored in receipt
+          services: [],
+          laborHours: job?.laborHours || '',
+          laborRate: job?.laborRate || '',
+          laborTotal: job?.laborTotal || '',
+          parts: job?.parts || [],
+          partsTotal: job?.partsTotal || '',
+          total: job?.totalAmount || receipt.totalAmount || '0',
+          notes: job?.notes || receipt.notes || ''
         };
         
         res.json({ success: true, data: pdfContent });
