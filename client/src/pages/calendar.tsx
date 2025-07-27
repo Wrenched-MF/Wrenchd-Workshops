@@ -100,14 +100,19 @@ export default function Calendar() {
 
   const updateJobMutation = useMutation({
     mutationFn: async ({ jobId, updates }: { jobId: string; updates: any }) => {
+      console.log("Updating job with data:", { jobId, updates });
       const response = await apiRequest(`/api/jobs/${jobId}`, "PUT", updates);
-      return response.json();
+      const result = await response.json();
+      console.log("Job update response:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] });
       toast({ title: "Job moved successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Job update failed:", error);
       toast({ title: "Failed to move job", variant: "destructive" });
     },
   });
@@ -143,17 +148,23 @@ export default function Calendar() {
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"));
       if (data.jobId && (data.currentBayId !== bayId || data.currentTime !== timeSlot)) {
+        console.log("Dropping job:", data.jobId, "to bay:", bayId, "at time:", timeSlot);
+        
+        // Format the date properly as an ISO string
+        const scheduledDate = new Date(selectedDate);
+        scheduledDate.setHours(0, 0, 0, 0); // Reset to start of day
+        
         updateJobMutation.mutate({
           jobId: data.jobId,
           updates: {
             serviceBayId: bayId,
             scheduledStartTime: timeSlot,
-            scheduledEndTime: calculateEndTime(timeSlot, 1), // Default 1 hour duration
-            scheduledDate: selectedDate.toISOString().split('T')[0], // Just the date part
+            scheduledDate: scheduledDate.toISOString(), // Full ISO string
           }
         });
       }
     } catch (error) {
+      console.error("Error dropping job:", error);
       toast({ title: "Error moving job", variant: "destructive" });
     }
   };
