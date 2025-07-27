@@ -228,6 +228,7 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         yPosition += 10;
         
         // Items
+        doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
         data.items.forEach((item: any) => {
           doc.text(item.itemName, 20, yPosition);
@@ -241,16 +242,18 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         yPosition += 10;
         doc.line(140, yPosition, 195, yPosition);
         yPosition += 5;
+        doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text(`Refund Amount: £${data.refundAmount}`, 140, yPosition);
         
       } else if (type === 'quote') {
         // Quote details section
-        doc.setFontSize(12);
+        doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text('Quote Details:', 15, yPosition);
         yPosition += 8;
         
+        doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
         doc.text(`Customer: ${data.customer}`, 15, yPosition);
         doc.text(`Quote Date: ${new Date(data.quoteDate).toLocaleDateString()}`, 110, yPosition);
@@ -261,9 +264,11 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         
         // Labor section
         if (data.laborHours && data.laborRate) {
+          doc.setFontSize(fontSize + 1);
           doc.setFont('helvetica', 'bold');
           doc.text('Labor:', 15, yPosition);
           yPosition += 6;
+          doc.setFontSize(fontSize);
           doc.setFont('helvetica', 'normal');
           doc.text(`Hours: ${data.laborHours}`, 20, yPosition);
           doc.text(`Rate: £${data.laborRate}/hour`, 110, yPosition);
@@ -273,11 +278,13 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         
         // Parts section
         if (data.parts && data.parts.length > 0) {
+          doc.setFontSize(fontSize + 1);
           doc.setFont('helvetica', 'bold');
           doc.text('Parts:', 15, yPosition);
           yPosition += 6;
           
           // Parts table header
+          doc.setFontSize(fontSize);
           doc.setFillColor(240, 240, 240);
           doc.rect(15, yPosition, 180, 8, 'F');
           doc.text('Part', 20, yPosition + 5);
@@ -302,20 +309,23 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         yPosition += 10;
         doc.line(140, yPosition, 195, yPosition);
         yPosition += 5;
+        doc.setFontSize(fontSize);
         doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
         yPosition += 6;
         doc.text(`Tax: £${data.tax}`, 140, yPosition);
         yPosition += 6;
+        doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text(`Total: £${data.total}`, 140, yPosition);
         
       } else if (type === 'receipt') {
         // Receipt details section
-        doc.setFontSize(12);
+        doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text('Receipt Details:', 15, yPosition);
         yPosition += 8;
         
+        doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
         doc.text(`Customer: ${data.customer}`, 15, yPosition);
         doc.text(`Receipt Date: ${new Date(data.receiptDate).toLocaleDateString()}`, 110, yPosition);
@@ -326,10 +336,12 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         
         // Services section
         if (data.services && data.services.length > 0) {
+          doc.setFontSize(fontSize + 1);
           doc.setFont('helvetica', 'bold');
           doc.text('Services:', 15, yPosition);
           yPosition += 6;
           
+          doc.setFontSize(fontSize);
           doc.setFont('helvetica', 'normal');
           data.services.forEach((service: any) => {
             doc.text(`• ${service.description}`, 20, yPosition);
@@ -343,6 +355,7 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
         yPosition += 10;
         doc.line(140, yPosition, 195, yPosition);
         yPosition += 5;
+        doc.setFontSize(fontSize + 2);
         doc.setFont('helvetica', 'bold');
         doc.text(`Total Paid: £${data.total}`, 140, yPosition);
       }
@@ -350,9 +363,11 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       // Notes section
       if (data.notes) {
         yPosition += 15;
+        doc.setFontSize(fontSize + 1);
         doc.setFont('helvetica', 'bold');
         doc.text('Notes:', 15, yPosition);
         yPosition += 6;
+        doc.setFontSize(fontSize);
         doc.setFont('helvetica', 'normal');
         const splitNotes = doc.splitTextToSize(data.notes || '', 180);
         doc.text(splitNotes, 15, yPosition);
