@@ -434,9 +434,17 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
 export const previewPDF = async (type: string, id: string) => {
   try {
     console.log('Previewing PDF for:', type, id);
-    const res = await apiRequest("POST", "/api/generate-pdf", { type, id });
-    const response = await res.json();
+    
+    // Get both PDF data and template settings for preview
+    const [pdfRes, settingsRes] = await Promise.all([
+      apiRequest("POST", "/api/generate-pdf", { type, id }),
+      apiRequest("GET", "/api/settings/business")
+    ]);
+    
+    const response = await pdfRes.json();
+    const settings = await settingsRes.json();
     console.log('Preview response:', response);
+    console.log('Preview template settings:', settings);
     
     if (response && response.success) {
       const { jsPDF } = await import('jspdf');
@@ -444,35 +452,126 @@ export const previewPDF = async (type: string, id: string) => {
       
       const data = response.data;
       
-      // Branded preview header
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text('WRENCH\'D', 15, 20);
-      doc.setFontSize(16);
-      doc.setTextColor(34, 197, 94); // Green color
-      doc.setFont('helvetica', 'bold');
-      doc.text('AUTO REPAIRS', 15, 30);
-      doc.setTextColor(0, 0, 0); // Reset to black
+      // Apply template settings for preview
+      const headerColor = hexToRgb(settings.headerColor || '#000000');
+      const accentColor = hexToRgb(settings.accentColor || '#22c55e');
+      const headerFontSize = settings.headerFontSize || 20;
+      const fontSize = settings.fontSize || 12;
+      const showLogo = settings.showLogo !== false;
+      const logoPosition = settings.logoPosition || 'left';
+      const headerLayout = settings.headerLayout || 'standard';
       
-      doc.setFontSize(10);
-      doc.text('Mobile Mechanic Services', 140, 15);
-      doc.text('Phone: 07123 456789', 140, 20);
-      doc.text('Email: info@wrenchd.com', 140, 25);
+      let yPosition = 15;
+      let logoWidth = 0;
+      
+      // Add logo if enabled and available
+      if (showLogo && settings.logoUrl) {
+        try {
+          const img = await loadImageFromDataUrl(settings.logoUrl);
+          const aspectRatio = img.width / img.height;
+          logoWidth = 30;
+          const logoHeight = logoWidth / aspectRatio;
+          
+          if (logoPosition === 'center') {
+            doc.addImage(settings.logoUrl, 'JPEG', 105 - logoWidth/2, yPosition, logoWidth, logoHeight);
+          } else if (logoPosition === 'right') {
+            doc.addImage(settings.logoUrl, 'JPEG', 195 - logoWidth, yPosition, logoWidth, logoHeight);
+          } else {
+            doc.addImage(settings.logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
+          }
+          
+          yPosition += logoHeight + 5;
+        } catch (error) {
+          console.log('Could not load logo image in preview:', error);
+        }
+      }
+      
+      // Company header with template styling
+      if (headerLayout === 'centered') {
+        doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
+        doc.setFontSize(headerFontSize);
+        doc.setFont('helvetica', 'bold');
+        const wrenchdWidth = doc.getTextWidth('WRENCH\'D');
+        doc.text('WRENCH\'D', 105 - wrenchdWidth/2, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(headerFontSize * 0.7);
+        doc.setTextColor(accentColor.r, accentColor.g, accentColor.b);
+        doc.setFont('helvetica', 'bold');
+        const autoWidth = doc.getTextWidth('AUTO REPAIRS');
+        doc.text('AUTO REPAIRS', 105 - autoWidth/2, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Mobile Mechanic Services | Phone: 07123 456789', 105, yPosition, { align: 'center' });
+        yPosition += 5;
+        doc.text('Email: info@wrenchd.com | Website: www.wrenchd.co.uk', 105, yPosition, { align: 'center' });
+        yPosition += 10;
+      } else {
+        let headerX = 15;
+        if (logoPosition === 'left' && showLogo && settings.logoUrl) {
+          headerX = 15 + logoWidth + 10;
+        }
+        
+        doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
+        doc.setFontSize(headerFontSize);
+        doc.setFont('helvetica', 'bold');
+        doc.text('WRENCH\'D', headerX, yPosition);
+        yPosition += 10;
+        
+        doc.setFontSize(headerFontSize * 0.7);
+        doc.setTextColor(accentColor.r, accentColor.g, accentColor.b);
+        doc.setFont('helvetica', 'bold');
+        doc.text('AUTO REPAIRS', headerX, yPosition);
+        
+        if (headerLayout !== 'centered') {
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Mobile Mechanic Services', 140, 15);
+          doc.text('Phone: 07123 456789', 140, 20);
+          doc.text('Email: info@wrenchd.com', 140, 25);
+          doc.text('Website: www.wrenchd.co.uk', 140, 30);
+        }
+        
+        yPosition = Math.max(yPosition + 5, 35);
+      }
       
       // Horizontal line
       doc.setLineWidth(0.5);
-      doc.line(15, 40, 195, 40);
+      doc.line(15, yPosition + 5, 195, yPosition + 5);
+      yPosition += 15;
       
-      doc.setFontSize(18);
+      // Document title with template font size
+      doc.setFontSize(fontSize + 6);
       doc.setFont('helvetica', 'bold');
-      doc.text(data.title, 15, 55);
+      doc.setTextColor(0, 0, 0);
+      doc.text(data.title, 15, yPosition);
       
-      doc.setFontSize(12);
+      yPosition += 15;
+      
+      // Basic content preview with template font size
+      doc.setFontSize(fontSize);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Document Type: ${type.toUpperCase().replace('-', ' ')}`, 15, 80);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, 95);
-      doc.text('Preview Mode - Full document available via Download', 15, 110);
+      doc.text('Preview - Actual content will vary based on document data', 15, yPosition);
+      yPosition += 10;
+      
+      // Show template styling preview
+      doc.setFontSize(fontSize - 2);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Template: ${headerLayout} layout, ${fontSize}pt font`, 15, yPosition);
+      yPosition += 6;
+      doc.text(`Colors: Header ${settings.headerColor || '#000000'}, Accent ${settings.accentColor || '#22c55e'}`, 15, yPosition);
+      
+      // Add footer if specified
+      if (settings.footerText) {
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(fontSize - 2);
+        doc.setTextColor(100, 100, 100);
+        doc.text(settings.footerText, 105, pageHeight - 20, { align: 'center' });
+      }
       
       // Create blob and open in new window
       const pdfBlob = doc.output('blob');
