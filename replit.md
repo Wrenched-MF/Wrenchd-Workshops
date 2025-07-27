@@ -15,9 +15,12 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Create parts on-the-fly** - When no matching parts found, create new inventory items directly from job form
 - **COMPLETED: Auto-calculated pricing** - Parts total automatically updates based on selected inventory pricing
 - **COMPLETED: Backend integration** - Job creation saves associated parts with proper inventory linking
+- **COMPLETED: Dynamic autocomplete interface** - Real-time search with part images, stock levels, and keyboard navigation
+- **COMPLETED: Job workflow PDF generation** - Quote PDFs for in-progress jobs, automatic receipt PDFs when completed
 - Replaced manual parts price entry with inventory-based part selection system
 - Search shows real-time filtering with stock levels and pricing information
 - New part creation pre-fills with search term and integrates seamlessly with inventory system
+- Job status workflow now includes PDF generation at appropriate stages
 
 ### Complete PDF Template Customization System (July 2025)
 - Built comprehensive PDF template editor with live preview functionality

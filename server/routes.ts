@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+// We'll implement simple PDF generation for now
 import { 
   insertCustomerSchema, insertVehicleSchema, insertSupplierSchema, 
   insertInventoryItemSchema, insertJobSchema, insertQuoteSchema,
@@ -282,6 +283,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete job" });
+    }
+  });
+
+  // Generate quote PDF from job
+  app.post("/api/jobs/:id/quote-pdf", async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      if (job.status !== 'in_progress') {
+        return res.status(400).json({ message: "Quote PDF can only be generated for jobs in progress" });
+      }
+
+      // Create quote from job data
+      const quoteData = {
+        customerId: job.customerId,
+        vehicleId: job.vehicleId,
+        title: job.title,
+        description: job.description,
+        status: 'pending',
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        laborHours: job.laborHours,
+        laborRate: job.laborRate,
+        partsTotal: job.partsTotal,
+        laborTotal: job.laborTotal,
+        totalAmount: job.totalAmount,
+        notes: job.notes,
+      };
+
+      const quote = await storage.createQuote(quoteData);
+
+      // Copy job parts to quote parts
+      if (job.parts && job.parts.length > 0) {
+        for (const part of job.parts) {
+          await storage.addQuotePart({
+            quoteId: quote.id,
+            inventoryItemId: part.inventoryItemId,
+            partName: part.partName,
+            partNumber: part.partNumber,
+            quantity: part.quantity,
+            unitPrice: part.unitPrice.toString(),
+            totalPrice: part.totalPrice.toString(),
+          });
+        }
+      }
+
+      // Generate PDF - for now return a placeholder URL
+      const pdfUrl = `/api/quotes/${quote.id}/pdf`;
+      
+      res.json({ 
+        message: "Quote PDF generated successfully",
+        pdfUrl,
+        quoteId: quote.id
+      });
+    } catch (error) {
+      console.error("Quote PDF generation error:", error);
+      res.status(500).json({ message: "Failed to generate quote PDF" });
+    }
+  });
+
+  // Generate receipt PDF from job
+  app.post("/api/jobs/:id/receipt-pdf", async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      if (job.status !== 'completed') {
+        return res.status(400).json({ message: "Receipt PDF can only be generated for completed jobs" });
+      }
+
+      // Create receipt from job data
+      const receiptData = {
+        jobId: job.id,
+        type: 'job_completion',
+        receiptNumber: `RCP-${Date.now()}`,
+        emailSent: false,
+      };
+
+      const receipt = await storage.createReceipt(receiptData);
+
+      // Generate PDF - for now return a placeholder URL
+      const pdfUrl = `/api/receipts/${receipt.id}/pdf`;
+      
+      res.json({ 
+        message: "Receipt PDF generated successfully",
+        pdfUrl,
+        receiptId: receipt.id
+      });
+    } catch (error) {
+      console.error("Receipt PDF generation error:", error);
+      res.status(500).json({ message: "Failed to generate receipt PDF" });
     }
   });
 

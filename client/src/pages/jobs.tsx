@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Calendar, Wrench, Check, PoundSterling, Briefcase } from "lucide-react";
+import { Plus, Calendar, Wrench, Check, PoundSterling, Briefcase, FileText, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import StatsCard from "@/components/ui/stats-card";
@@ -28,8 +28,13 @@ export default function Jobs() {
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       apiRequest("PUT", `/api/jobs/${id}`, data),
-    onSuccess: () => {
+    onSuccess: (updatedJob: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      
+      // Auto-generate receipt PDF when job is completed
+      if (updatedJob && updatedJob.status === 'completed') {
+        generateReceiptPdf(updatedJob.id);
+      }
     },
   });
 
@@ -39,6 +44,27 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
     },
   });
+
+  const generateQuotePdfMutation = useMutation({
+    mutationFn: (jobId: string) => apiRequest("POST", `/api/jobs/${jobId}/quote-pdf`),
+    onSuccess: (response: any) => {
+      // Download the PDF
+      if (response && response.pdfUrl) {
+        window.open(response.pdfUrl, '_blank');
+      }
+    },
+  });
+
+  const generateReceiptPdf = async (jobId: string) => {
+    try {
+      const response: any = await apiRequest("POST", `/api/jobs/${jobId}/receipt-pdf`);
+      if (response && response.pdfUrl) {
+        window.open(response.pdfUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Failed to generate receipt PDF:', error);
+    }
+  };
 
   // Calculate stats
   const scheduledJobs = jobs.filter(job => job.status === 'scheduled').length;
@@ -198,19 +224,43 @@ export default function Jobs() {
                           })}
                           className="bg-orange-600 hover:bg-orange-700"
                         >
+                          <Wrench className="w-4 h-4 mr-1" />
                           Start Job
                         </Button>
                       )}
                       {job.status === 'in_progress' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            onClick={() => updateJobMutation.mutate({ 
+                              id: job.id, 
+                              data: { status: 'completed', completedDate: new Date().toISOString() } 
+                            })}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Complete Job
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => generateQuotePdfMutation.mutate(job.id)}
+                            disabled={generateQuotePdfMutation.isPending}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            {generateQuotePdfMutation.isPending ? "Generating..." : "Quote PDF"}
+                          </Button>
+                        </>
+                      )}
+                      {job.status === 'completed' && (
                         <Button 
                           size="sm" 
-                          onClick={() => updateJobMutation.mutate({ 
-                            id: job.id, 
-                            data: { status: 'completed', completedDate: new Date().toISOString() } 
-                          })}
-                          className="bg-green-600 hover:bg-green-700"
+                          variant="outline"
+                          onClick={() => generateReceiptPdf(job.id)}
+                          className="text-green-600 border-green-600 hover:bg-green-50"
                         >
-                          Complete Job
+                          <Receipt className="w-4 h-4 mr-1" />
+                          Receipt PDF
                         </Button>
                       )}
                       <Button variant="ghost" size="sm">
