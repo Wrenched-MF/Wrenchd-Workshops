@@ -240,10 +240,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs", async (req, res) => {
     try {
-      const validatedData = insertJobSchema.parse(req.body);
-      const job = await storage.createJob(validatedData);
+      const { jobParts, ...jobData } = req.body;
+      const validatedJobData = insertJobSchema.parse(jobData);
+      const job = await storage.createJob(validatedJobData);
+      
+      // Create job parts if provided
+      if (jobParts && Array.isArray(jobParts) && jobParts.length > 0) {
+        for (const part of jobParts) {
+          await storage.addJobPart({
+            jobId: job.id,
+            inventoryItemId: part.inventoryItemId,
+            partName: part.partName,
+            partNumber: part.partNumber,
+            quantity: part.quantity,
+            unitPrice: part.unitPrice.toString(),
+            totalPrice: part.totalPrice.toString(),
+          });
+        }
+      }
+      
       res.status(201).json(job);
     } catch (error) {
+      console.error("Job creation error:", error);
       res.status(400).json({ message: "Invalid job data" });
     }
   });

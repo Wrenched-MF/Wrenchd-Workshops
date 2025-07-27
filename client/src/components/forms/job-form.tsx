@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -12,14 +13,26 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import JobPartsSelector from "./job-parts-selector";
+
+interface JobPart {
+  inventoryItemId: string;
+  partName: string;
+  partNumber?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
 
 interface JobFormProps {
-  onSubmit: (data: InsertJob) => void;
+  onSubmit: (data: InsertJob & { jobParts: JobPart[] }) => void;
   isSubmitting?: boolean;
   initialData?: Partial<InsertJob>;
 }
 
 export default function JobForm({ onSubmit, isSubmitting, initialData }: JobFormProps) {
+  const [selectedParts, setSelectedParts] = useState<JobPart[]>([]);
+  
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
   });
@@ -64,12 +77,25 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
     form.setValue("totalAmount", totalAmount.toFixed(2));
   };
 
+  const handlePartsChange = (parts: JobPart[]) => {
+    setSelectedParts(parts);
+    const partsTotal = parts.reduce((sum, part) => sum + part.totalPrice, 0);
+    form.setValue("partsTotal", partsTotal.toFixed(2));
+    calculateTotals();
+  };
+
+  const handlePartsTotalChange = (total: number) => {
+    form.setValue("partsTotal", total.toFixed(2));
+    calculateTotals();
+  };
+
   const handleSubmit = (data: InsertJob) => {
     // Ensure dates are properly formatted as Date objects
     const formattedData = {
       ...data,
       scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : null,
       completedDate: data.completedDate ? new Date(data.completedDate) : null,
+      jobParts: selectedParts,
     };
     onSubmit(formattedData);
   };
@@ -234,6 +260,15 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
           />
         </div>
 
+        {/* Parts Selection */}
+        <div className="border-t pt-4">
+          <JobPartsSelector
+            parts={selectedParts}
+            onPartsChange={handlePartsChange}
+            onTotalChange={handlePartsTotalChange}
+          />
+        </div>
+
         {/* Pricing */}
         <div className="border-t pt-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
@@ -299,12 +334,13 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
                       placeholder="0.00"
                       {...field}
                       value={field.value || ""}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        setTimeout(calculateTotals, 0);
-                      }}
+                      readOnly
+                      className="bg-gray-50"
                     />
                   </FormControl>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Calculated from selected parts above
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
