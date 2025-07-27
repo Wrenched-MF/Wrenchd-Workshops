@@ -8,6 +8,16 @@ This is a comprehensive mobile mechanic workshop management system built with Re
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### Purchase Order & Return System (July 2025)
+- Added complete purchase order and return functionality for supplier management
+- Implemented automatic inventory stock updates when orders/returns are approved
+- Created professional PDF generation with WRENCH'D branding and company logo
+- Added API endpoints for purchase order and return CRUD operations
+- Integrated jsPDF library for client-side PDF document generation
+- Enhanced supplier management interface with tabbed navigation for orders and returns
+
 ## System Architecture
 
 ### Frontend Architecture
