@@ -76,7 +76,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -157,7 +157,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
               <FormControl>
                 <Textarea 
                   placeholder="Detailed description of the work to be performed"
-                  className="h-24"
+                  className="h-20"
                   {...field} 
                 />
               </FormControl>
@@ -234,8 +234,8 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
         </div>
 
         {/* Pricing */}
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing</h3>
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -347,7 +347,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
               <FormControl>
                 <Textarea 
                   placeholder="Additional notes about this job"
-                  className="h-24"
+                  className="h-16"
                   {...field} 
                 />
               </FormControl>
@@ -356,7 +356,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
           )}
         />
 
-        <div className="flex justify-end space-x-2 pt-6">
+        <div className="flex justify-end space-x-2 pt-4">
           <Button type="submit" disabled={isSubmitting} className="bg-wrench-green hover:bg-wrench-dark">
             {isSubmitting ? "Creating..." : "Create Job"}
           </Button>
