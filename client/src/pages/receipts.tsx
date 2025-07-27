@@ -25,15 +25,27 @@ export default function Receipts() {
 
   const deleteQuoteMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/quotes/${id}`),
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      // Optimistically remove from cache
+      queryClient.setQueryData(["/api/receipts"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pdfDocuments: oldData.pdfDocuments.filter((doc: any) => doc.id !== deletedId)
+        };
+      });
+      
+      // Also invalidate to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+      
       toast({
         title: "Quote deleted",
         description: "Quote has been successfully deleted.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Delete quote error:", error);
       toast({
         title: "Error",
         description: "Failed to delete quote.",
