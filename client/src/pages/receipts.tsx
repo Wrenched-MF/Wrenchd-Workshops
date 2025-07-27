@@ -20,155 +20,14 @@ export default function Receipts() {
   const receipts = receiptsData?.receipts || [];
   const pdfDocuments = receiptsData?.pdfDocuments || [];
 
-  const generatePDF = async (type: string, id: string) => {
-    try {
-      const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
-      if (response.success) {
-        const { jsPDF } = await import('jspdf');
-        const doc = new jsPDF();
-        
-        const data = response.data;
-        
-        const generatePDFContent = () => {
-          // Company details header
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
-          doc.text('Mobile Mechanic Services', 140, 20);
-          doc.text('Phone: 07123 456789', 140, 25);
-          doc.text('Email: info@wrenchd.com', 140, 30);
-          
-          // Horizontal line
-          doc.setLineWidth(0.5);
-          doc.line(15, 40, 195, 40);
-          
-          // Document title
-          doc.setFontSize(18);
-          doc.setFont('helvetica', 'bold');
-          doc.text(data.title, 15, 55);
-          
-          let yPosition = 70;
-          
-          if (type === 'purchase-order') {
-            // Order details section
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Order Details:', 15, yPosition);
-            yPosition += 8;
-            
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
-            doc.text(`Order Date: ${new Date(data.orderDate).toLocaleDateString()}`, 110, yPosition);
-            yPosition += 6;
-            
-            if (data.expectedDelivery) {
-              doc.text(`Expected Delivery: ${new Date(data.expectedDelivery).toLocaleDateString()}`, 15, yPosition);
-              yPosition += 6;
-            }
-            
-            yPosition += 10;
-            
-            // Items table header
-            doc.setFont('helvetica', 'bold');
-            doc.setFillColor(240, 240, 240);
-            doc.rect(15, yPosition, 180, 8, 'F');
-            doc.text('Item', 20, yPosition + 5);
-            doc.text('Qty', 120, yPosition + 5);
-            doc.text('Unit Price', 140, yPosition + 5);
-            doc.text('Total', 170, yPosition + 5);
-            yPosition += 10;
-            
-            // Items
-            doc.setFont('helvetica', 'normal');
-            data.items.forEach((item: any) => {
-              doc.text(item.itemName, 20, yPosition);
-              doc.text(item.quantity.toString(), 125, yPosition);
-              doc.text(`£${item.unitPrice}`, 145, yPosition);
-              doc.text(`£${item.totalPrice}`, 175, yPosition);
-              yPosition += 6;
-            });
-            
-            // Totals section
-            yPosition += 10;
-            doc.line(140, yPosition, 195, yPosition);
-            yPosition += 5;
-            doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
-            yPosition += 6;
-            doc.text(`Tax: £${data.tax}`, 140, yPosition);
-            yPosition += 6;
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Total: £${data.total}`, 140, yPosition);
-            
-          } else {
-            // Return details section
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Return Details:', 15, yPosition);
-            yPosition += 8;
-            
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
-            doc.text(`Return Date: ${new Date(data.returnDate).toLocaleDateString()}`, 110, yPosition);
-            yPosition += 6;
-            doc.text(`Reason: ${data.reason || 'Not specified'}`, 15, yPosition);
-            yPosition += 10;
-            
-            // Items table header
-            doc.setFont('helvetica', 'bold');
-            doc.setFillColor(240, 240, 240);
-            doc.rect(15, yPosition, 180, 8, 'F');
-            doc.text('Item', 20, yPosition + 5);
-            doc.text('Qty', 120, yPosition + 5);
-            doc.text('Condition', 140, yPosition + 5);
-            doc.text('Total', 170, yPosition + 5);
-            yPosition += 10;
-            
-            // Items
-            doc.setFont('helvetica', 'normal');
-            data.items.forEach((item: any) => {
-              doc.text(item.itemName, 20, yPosition);
-              doc.text(item.quantity.toString(), 125, yPosition);
-              doc.text(item.condition, 145, yPosition);
-              doc.text(`£${item.totalPrice}`, 175, yPosition);
-              yPosition += 6;
-            });
-            
-            // Refund amount
-            yPosition += 10;
-            doc.line(140, yPosition, 195, yPosition);
-            yPosition += 5;
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Refund Amount: £${data.refundAmount}`, 140, yPosition);
-          }
-          
-          // Notes section
-          if (data.notes) {
-            yPosition += 15;
-            doc.setFont('helvetica', 'bold');
-            doc.text('Notes:', 15, yPosition);
-            yPosition += 6;
-            doc.setFont('helvetica', 'normal');
-            const splitNotes = doc.splitTextToSize(data.notes || '', 180);
-            doc.text(splitNotes, 15, yPosition);
-          }
-          
-          // Footer
-          const footerY = 280;
-          doc.setLineWidth(0.5);
-          doc.line(15, footerY, 195, footerY);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.text('WRENCH\'D AUTO REPAIRS - Mobile Mechanic Services', 15, footerY + 5);
-          doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 15, footerY + 10);
-          
-          doc.save(`WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`);
-        };
-        
-        generatePDFContent();
-      }
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-    }
+  const handleGeneratePDF = async (type: string, id: string) => {
+    const { generatePDF } = await import('@/utils/pdfGenerator');
+    await generatePDF(type, id);
+  };
+
+  const handlePreviewPDF = async (type: string, id: string) => {
+    const { previewPDF } = await import('@/utils/pdfGenerator');
+    await previewPDF(type, id);
   };
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<JobWithDetails[]>({
@@ -361,14 +220,24 @@ export default function Receipts() {
                           <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
                           <TableCell>£{doc.amount}</TableCell>
                           <TableCell>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => generatePDF('purchase-order', doc.id)}
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              PDF
-                            </Button>
+                            <div className="flex space-x-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handlePreviewPDF('purchase-order', doc.id)}
+                              >
+                                <FileText className="w-4 h-4 mr-1" />
+                                Preview
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleGeneratePDF('purchase-order', doc.id)}
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                PDF
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -415,14 +284,24 @@ export default function Receipts() {
                           <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
                           <TableCell>£{doc.amount}</TableCell>
                           <TableCell>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => generatePDF('return', doc.id)}
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              PDF
-                            </Button>
+                            <div className="flex space-x-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handlePreviewPDF('return', doc.id)}
+                              >
+                                <FileText className="w-4 h-4 mr-1" />
+                                Preview
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleGeneratePDF('return', doc.id)}
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                PDF
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

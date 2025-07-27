@@ -488,7 +488,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Purchase order not found" });
         }
         
-        // Generate PDF content
         const pdfContent = {
           title: `Purchase Order ${order.orderNumber}`,
           supplier: order.supplier.name,
@@ -502,13 +501,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         res.json({ success: true, data: pdfContent });
+        
       } else if (type === 'return') {
         const returnItem = await storage.getReturn(id);
         if (!returnItem) {
           return res.status(404).json({ message: "Return not found" });
         }
         
-        // Generate PDF content
         const pdfContent = {
           title: `Return ${returnItem.returnNumber}`,
           supplier: returnItem.supplier.name,
@@ -520,6 +519,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         res.json({ success: true, data: pdfContent });
+        
+      } else if (type === 'quote') {
+        const quote = await storage.getQuote(id);
+        if (!quote) {
+          return res.status(404).json({ message: "Quote not found" });
+        }
+        
+        const pdfContent = {
+          title: `Quote ${quote.quoteNumber}`,
+          customer: quote.customer?.name || 'Unknown',
+          vehicle: `${quote.vehicle?.year} ${quote.vehicle?.make} ${quote.vehicle?.model}`,
+          quoteDate: quote.quoteDate,
+          validUntil: quote.validUntil,
+          laborHours: quote.laborHours,
+          laborRate: quote.laborRate,
+          parts: quote.parts,
+          subtotal: quote.subtotal,
+          tax: quote.tax,
+          total: quote.total,
+          notes: quote.notes
+        };
+        
+        res.json({ success: true, data: pdfContent });
+        
+      } else if (type === 'receipt') {
+        const receipt = await storage.getReceipt(id);
+        if (!receipt) {
+          return res.status(404).json({ message: "Receipt not found" });
+        }
+        
+        const pdfContent = {
+          title: `Receipt ${receipt.receiptNumber}`,
+          customer: receipt.customer?.name || 'Unknown',
+          jobTitle: receipt.job?.title || 'Service',
+          receiptDate: receipt.receiptDate,
+          paymentMethod: receipt.paymentMethod,
+          services: receipt.services || [],
+          total: receipt.totalAmount,
+          notes: receipt.notes
+        };
+        
+        res.json({ success: true, data: pdfContent });
+        
       } else {
         res.status(400).json({ message: "Invalid PDF type" });
       }

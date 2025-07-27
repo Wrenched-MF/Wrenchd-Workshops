@@ -1,0 +1,293 @@
+import { apiRequest } from "@/lib/queryClient";
+
+export const generatePDF = async (type: string, id: string, fileName?: string) => {
+  try {
+    const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    if (response.success) {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      const data = response.data;
+      
+      // Company header
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
+      doc.text('Mobile Mechanic Services', 140, 20);
+      doc.text('Phone: 07123 456789', 140, 25);
+      doc.text('Email: info@wrenchd.com', 140, 30);
+      
+      // Horizontal line
+      doc.setLineWidth(0.5);
+      doc.line(15, 40, 195, 40);
+      
+      // Document title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(data.title, 15, 55);
+      
+      let yPosition = 70;
+      
+      if (type === 'purchase-order') {
+        // Order details section
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Order Details:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
+        doc.text(`Order Date: ${new Date(data.orderDate).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 6;
+        
+        if (data.expectedDelivery) {
+          doc.text(`Expected Delivery: ${new Date(data.expectedDelivery).toLocaleDateString()}`, 15, yPosition);
+          yPosition += 6;
+        }
+        
+        yPosition += 10;
+        
+        // Items table header
+        doc.setFont('helvetica', 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, yPosition, 180, 8, 'F');
+        doc.text('Item', 20, yPosition + 5);
+        doc.text('Qty', 120, yPosition + 5);
+        doc.text('Unit Price', 140, yPosition + 5);
+        doc.text('Total', 170, yPosition + 5);
+        yPosition += 10;
+        
+        // Items
+        doc.setFont('helvetica', 'normal');
+        data.items.forEach((item: any) => {
+          doc.text(item.itemName, 20, yPosition);
+          doc.text(item.quantity.toString(), 125, yPosition);
+          doc.text(`£${item.unitPrice}`, 145, yPosition);
+          doc.text(`£${item.totalPrice}`, 175, yPosition);
+          yPosition += 6;
+        });
+        
+        // Totals section
+        yPosition += 10;
+        doc.line(140, yPosition, 195, yPosition);
+        yPosition += 5;
+        doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
+        yPosition += 6;
+        doc.text(`Tax: £${data.tax}`, 140, yPosition);
+        yPosition += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total: £${data.total}`, 140, yPosition);
+        
+      } else if (type === 'return') {
+        // Return details section
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Return Details:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Supplier: ${data.supplier}`, 15, yPosition);
+        doc.text(`Return Date: ${new Date(data.returnDate).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 6;
+        doc.text(`Reason: ${data.reason || 'Not specified'}`, 15, yPosition);
+        yPosition += 10;
+        
+        // Items table header
+        doc.setFont('helvetica', 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(15, yPosition, 180, 8, 'F');
+        doc.text('Item', 20, yPosition + 5);
+        doc.text('Qty', 120, yPosition + 5);
+        doc.text('Condition', 140, yPosition + 5);
+        doc.text('Total', 170, yPosition + 5);
+        yPosition += 10;
+        
+        // Items
+        doc.setFont('helvetica', 'normal');
+        data.items.forEach((item: any) => {
+          doc.text(item.itemName, 20, yPosition);
+          doc.text(item.quantity.toString(), 125, yPosition);
+          doc.text(item.condition, 145, yPosition);
+          doc.text(`£${item.totalPrice}`, 175, yPosition);
+          yPosition += 6;
+        });
+        
+        // Refund amount
+        yPosition += 10;
+        doc.line(140, yPosition, 195, yPosition);
+        yPosition += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Refund Amount: £${data.refundAmount}`, 140, yPosition);
+        
+      } else if (type === 'quote') {
+        // Quote details section
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Quote Details:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Customer: ${data.customer}`, 15, yPosition);
+        doc.text(`Quote Date: ${new Date(data.quoteDate).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 6;
+        doc.text(`Vehicle: ${data.vehicle}`, 15, yPosition);
+        doc.text(`Valid Until: ${new Date(data.validUntil).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 10;
+        
+        // Labor section
+        if (data.laborHours && data.laborRate) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Labor:', 15, yPosition);
+          yPosition += 6;
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Hours: ${data.laborHours}`, 20, yPosition);
+          doc.text(`Rate: £${data.laborRate}/hour`, 110, yPosition);
+          doc.text(`Labor Total: £${(data.laborHours * data.laborRate).toFixed(2)}`, 150, yPosition);
+          yPosition += 10;
+        }
+        
+        // Parts section
+        if (data.parts && data.parts.length > 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Parts:', 15, yPosition);
+          yPosition += 6;
+          
+          // Parts table header
+          doc.setFillColor(240, 240, 240);
+          doc.rect(15, yPosition, 180, 8, 'F');
+          doc.text('Part', 20, yPosition + 5);
+          doc.text('Qty', 120, yPosition + 5);
+          doc.text('Unit Price', 140, yPosition + 5);
+          doc.text('Total', 170, yPosition + 5);
+          yPosition += 10;
+          
+          // Parts
+          doc.setFont('helvetica', 'normal');
+          data.parts.forEach((part: any) => {
+            doc.text(part.name, 20, yPosition);
+            doc.text(part.quantity.toString(), 125, yPosition);
+            doc.text(`£${part.unitPrice}`, 145, yPosition);
+            doc.text(`£${part.totalPrice}`, 175, yPosition);
+            yPosition += 6;
+          });
+          yPosition += 5;
+        }
+        
+        // Totals section
+        yPosition += 10;
+        doc.line(140, yPosition, 195, yPosition);
+        yPosition += 5;
+        doc.text(`Subtotal: £${data.subtotal}`, 140, yPosition);
+        yPosition += 6;
+        doc.text(`Tax: £${data.tax}`, 140, yPosition);
+        yPosition += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total: £${data.total}`, 140, yPosition);
+        
+      } else if (type === 'receipt') {
+        // Receipt details section
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Receipt Details:', 15, yPosition);
+        yPosition += 8;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Customer: ${data.customer}`, 15, yPosition);
+        doc.text(`Receipt Date: ${new Date(data.receiptDate).toLocaleDateString()}`, 110, yPosition);
+        yPosition += 6;
+        doc.text(`Job: ${data.jobTitle}`, 15, yPosition);
+        doc.text(`Payment Method: ${data.paymentMethod}`, 110, yPosition);
+        yPosition += 10;
+        
+        // Services section
+        if (data.services && data.services.length > 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Services:', 15, yPosition);
+          yPosition += 6;
+          
+          doc.setFont('helvetica', 'normal');
+          data.services.forEach((service: any) => {
+            doc.text(`• ${service.description}`, 20, yPosition);
+            doc.text(`£${service.amount}`, 175, yPosition);
+            yPosition += 6;
+          });
+          yPosition += 5;
+        }
+        
+        // Total section
+        yPosition += 10;
+        doc.line(140, yPosition, 195, yPosition);
+        yPosition += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total Paid: £${data.total}`, 140, yPosition);
+      }
+      
+      // Notes section
+      if (data.notes) {
+        yPosition += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notes:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont('helvetica', 'normal');
+        const splitNotes = doc.splitTextToSize(data.notes || '', 180);
+        doc.text(splitNotes, 15, yPosition);
+      }
+      
+      // Footer
+      const footerY = 280;
+      doc.setLineWidth(0.5);
+      doc.line(15, footerY, 195, footerY);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('WRENCH\'D AUTO REPAIRS - Mobile Mechanic Services', 15, footerY + 5);
+      doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 15, footerY + 10);
+      
+      // Download the PDF
+      const downloadFileName = fileName || `WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`;
+      doc.save(downloadFileName);
+      
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    return false;
+  }
+};
+
+export const previewPDF = async (type: string, id: string) => {
+  try {
+    const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    if (response.success) {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      const data = response.data;
+      
+      // Same PDF generation logic but return blob for preview
+      // Company header
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
+      doc.text('Mobile Mechanic Services', 140, 20);
+      
+      // Document title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(data.title, 15, 55);
+      
+      // Return PDF as blob for preview
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Open in new window for preview
+      window.open(pdfUrl, '_blank');
+      
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('PDF preview failed:', error);
+    return false;
+  }
+};
