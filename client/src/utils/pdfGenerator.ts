@@ -470,16 +470,37 @@ export const previewPDF = async (type: string, id: string) => {
   try {
     console.log('Previewing PDF for:', type, id);
     
-    // Get both PDF data and template settings for preview
-    const [pdfRes, settingsRes] = await Promise.all([
+    // Map document types to template types
+    const templateTypeMap: { [key: string]: string } = {
+      'receipt': 'receipt',
+      'quote': 'quote', 
+      'purchase-order': 'purchase_order',
+      'return': 'return'
+    };
+    
+    const templateType = templateTypeMap[type] || 'general';
+    
+    // Get PDF data, business settings, and active template for preview
+    const [pdfRes, settingsRes, templateRes] = await Promise.all([
       apiRequest("POST", "/api/generate-pdf", { type, id }),
-      apiRequest("GET", "/api/settings/business")
+      apiRequest("GET", "/api/settings/business"),
+      apiRequest("GET", `/api/templates/active/${templateType}`)
     ]);
     
     const response = await pdfRes.json();
     const settings = await settingsRes.json();
+    const templateResponse = await templateRes.json();
+    
     console.log('Preview response:', response);
-    console.log('Preview template settings:', settings);
+    console.log('Preview business settings:', settings);
+    console.log('Preview template response for', templateType, ':', templateResponse);
+    
+    // Use active template settings if available, otherwise fall back to business settings
+    const activeTemplate = templateResponse && templateResponse.id ? templateResponse : null;
+    const templateSettings = activeTemplate || settings;
+    
+    console.log('Preview using template:', activeTemplate ? 'Custom template' : 'Business settings');
+    console.log('Preview template name:', activeTemplate?.templateName || 'Default');
     
     if (response && response.success) {
       const { jsPDF } = await import('jspdf');
@@ -488,31 +509,33 @@ export const previewPDF = async (type: string, id: string) => {
       const data = response.data;
       
       // Apply template settings for preview
-      const headerColor = hexToRgb(settings.headerColor || '#000000');
-      const accentColor = hexToRgb(settings.accentColor || '#22c55e');
-      const headerFontSize = settings.headerFontSize || 20;
-      const fontSize = settings.fontSize || 12;
-      const showLogo = settings.showLogo !== false;
-      const logoPosition = settings.logoPosition || 'left';
-      const headerLayout = settings.headerLayout || 'standard';
+      const headerColor = hexToRgb(templateSettings.headerColor || templateSettings.primaryColor || '#000000');
+      const accentColor = hexToRgb(templateSettings.accentColor || templateSettings.secondaryColor || '#22c55e');
+      const headerFontSize = templateSettings.headerFontSize || 20;
+      const fontSize = templateSettings.fontSize || 12;
+      const showLogo = (templateSettings.showLogo || templateSettings.showCompanyLogo) !== false;
+      const logoPosition = templateSettings.logoPosition || 'left';
+      const headerLayout = templateSettings.headerLayout || 'standard';
+      const companyName = templateSettings.companyName || templateSettings.businessName || "WRENCH'D Auto Repairs";
       
       let yPosition = 15;
       let logoWidth = 0;
       
-      // Add logo if enabled and available
-      if (showLogo && settings.logoUrl) {
+      // Add logo if enabled and available (use template logo or fallback)
+      const logoUrl = templateSettings.logoUrl || settings.logoUrl;
+      if (showLogo && logoUrl) {
         try {
-          const img = await loadImageFromDataUrl(settings.logoUrl);
+          const img = await loadImageFromDataUrl(logoUrl);
           const aspectRatio = img.width / img.height;
           logoWidth = 30;
           const logoHeight = logoWidth / aspectRatio;
           
           if (logoPosition === 'center') {
-            doc.addImage(settings.logoUrl, 'JPEG', 105 - logoWidth/2, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 105 - logoWidth/2, yPosition, logoWidth, logoHeight);
           } else if (logoPosition === 'right') {
-            doc.addImage(settings.logoUrl, 'JPEG', 195 - logoWidth, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 195 - logoWidth, yPosition, logoWidth, logoHeight);
           } else {
-            doc.addImage(settings.logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
+            doc.addImage(logoUrl, 'JPEG', 15, yPosition, logoWidth, logoHeight);
           }
           
           yPosition += logoHeight + 5;
@@ -526,8 +549,8 @@ export const previewPDF = async (type: string, id: string) => {
         doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
         doc.setFontSize(headerFontSize);
         doc.setFont('helvetica', 'bold');
-        const wrenchdWidth = doc.getTextWidth('WRENCH\'D');
-        doc.text('WRENCH\'D', 105 - wrenchdWidth/2, yPosition);
+        const companyWidth = doc.getTextWidth(companyName);
+        doc.text(companyName, 105 - companyWidth/2, yPosition);
         yPosition += 10;
         
         doc.setFontSize(headerFontSize * 0.7);
@@ -537,23 +560,26 @@ export const previewPDF = async (type: string, id: string) => {
         doc.text('AUTO REPAIRS', 105 - autoWidth/2, yPosition);
         yPosition += 15;
         
+        // Company details centered (use template data or fallback)
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
-        doc.text('Mobile Mechanic Services | Phone: 07123 456789', 105, yPosition, { align: 'center' });
+        const phone = templateSettings.phone || settings.businessPhone || '07123 456789';
+        const email = templateSettings.email || settings.businessEmail || 'info@wrenchd.com';
+        doc.text(`Mobile Mechanic Services | Phone: ${phone}`, 105, yPosition, { align: 'center' });
         yPosition += 5;
-        doc.text('Email: info@wrenchd.com | Website: www.wrenchd.co.uk', 105, yPosition, { align: 'center' });
+        doc.text(`Email: ${email}`, 105, yPosition, { align: 'center' });
         yPosition += 10;
       } else {
         let headerX = 15;
-        if (logoPosition === 'left' && showLogo && settings.logoUrl) {
+        if (logoPosition === 'left' && showLogo && logoUrl) {
           headerX = 15 + logoWidth + 10;
         }
         
         doc.setTextColor(headerColor.r, headerColor.g, headerColor.b);
         doc.setFontSize(headerFontSize);
         doc.setFont('helvetica', 'bold');
-        doc.text('WRENCH\'D', headerX, yPosition);
+        doc.text(companyName, headerX, yPosition);
         yPosition += 10;
         
         doc.setFontSize(headerFontSize * 0.7);
@@ -565,10 +591,11 @@ export const previewPDF = async (type: string, id: string) => {
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           doc.setFont('helvetica', 'normal');
+          const phone = templateSettings.phone || settings.businessPhone || '07123 456789';
+          const email = templateSettings.email || settings.businessEmail || 'info@wrenchd.com';
           doc.text('Mobile Mechanic Services', 140, 15);
-          doc.text('Phone: 07123 456789', 140, 20);
-          doc.text('Email: info@wrenchd.com', 140, 25);
-          doc.text('Website: www.wrenchd.co.uk', 140, 30);
+          doc.text(`Phone: ${phone}`, 140, 20);
+          doc.text(`Email: ${email}`, 140, 25);
         }
         
         yPosition = Math.max(yPosition + 5, 35);
@@ -598,14 +625,15 @@ export const previewPDF = async (type: string, id: string) => {
       doc.setTextColor(100, 100, 100);
       doc.text(`Template: ${headerLayout} layout, ${fontSize}pt font`, 15, yPosition);
       yPosition += 6;
-      doc.text(`Colors: Header ${settings.headerColor || '#000000'}, Accent ${settings.accentColor || '#22c55e'}`, 15, yPosition);
+      doc.text(`Colors: Header ${templateSettings.headerColor || templateSettings.primaryColor || '#000000'}, Accent ${templateSettings.accentColor || templateSettings.secondaryColor || '#22c55e'}`, 15, yPosition);
       
-      // Add footer if specified
-      if (settings.footerText) {
+      // Add footer if specified (use template footer or fallback)
+      const footerText = templateSettings.footerText || settings.footerText;
+      if (footerText) {
         const pageHeight = doc.internal.pageSize.height;
         doc.setFontSize(fontSize - 2);
         doc.setTextColor(100, 100, 100);
-        doc.text(settings.footerText, 105, pageHeight - 20, { align: 'center' });
+        doc.text(footerText, 105, pageHeight - 20, { align: 'center' });
       }
       
       // Create blob and open in new window
