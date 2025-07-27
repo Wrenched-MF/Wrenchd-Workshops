@@ -10,8 +10,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const serviceBayFormSchema = insertServiceBaySchema.extend({
+const serviceBayFormSchema = z.object({
   name: z.string().min(1, "Bay name is required"),
+  description: z.string().optional(),
+  color: z.string().optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.number().optional(),
 });
 
 type ServiceBayFormData = z.infer<typeof serviceBayFormSchema>;
@@ -44,8 +48,13 @@ export default function ServiceBayForm({ bay, onSuccess, onCancel }: ServiceBayF
       toast({ title: "Service bay created successfully" });
       onSuccess?.();
     },
-    onError: () => {
-      toast({ title: "Failed to create service bay", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Service bay creation error:", error);
+      toast({ 
+        title: "Failed to create service bay", 
+        description: error?.message || "Please check your input and try again",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -57,16 +66,30 @@ export default function ServiceBayForm({ bay, onSuccess, onCancel }: ServiceBayF
       toast({ title: "Service bay updated successfully" });
       onSuccess?.();
     },
-    onError: () => {
-      toast({ title: "Failed to update service bay", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Service bay update error:", error);
+      toast({ 
+        title: "Failed to update service bay", 
+        description: error?.message || "Please check your input and try again",
+        variant: "destructive" 
+      });
     },
   });
 
   const onSubmit = (data: ServiceBayFormData) => {
+    console.log("Submitting service bay data:", data);
+    const submitData = {
+      ...data,
+      description: data.description || null,
+      color: data.color || "#3B82F6",
+      isActive: data.isActive ?? true,
+      sortOrder: data.sortOrder || 0,
+    };
+    
     if (bay) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(submitData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -74,6 +97,16 @@ export default function ServiceBayForm({ bay, onSuccess, onCancel }: ServiceBayF
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {form.formState.errors && Object.keys(form.formState.errors).length > 0 && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded">
+          <p className="text-sm text-red-600">Please fix the following errors:</p>
+          <ul className="text-sm text-red-600 mt-1">
+            {Object.entries(form.formState.errors).map(([key, error]) => (
+              <li key={key}>• {(error as any)?.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div>
         <Label htmlFor="name">Bay Name</Label>
         <Input
