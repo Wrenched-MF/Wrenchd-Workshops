@@ -491,9 +491,15 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
             {parts.map((part, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-white border rounded-md">
                 <div className="flex-1">
-                  <p className="font-medium">{part.partName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{part.partName}</p>
+                    {part.partNumber && (
+                      <Badge variant="outline" className="text-xs font-mono">
+                        #{part.partNumber}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">
-                    {part.partNumber && `${part.partNumber} • `}
                     £{part.unitPrice.toFixed(2)} each
                   </p>
                 </div>

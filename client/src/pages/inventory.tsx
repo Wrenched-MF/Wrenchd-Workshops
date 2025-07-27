@@ -219,13 +219,20 @@ export default function Inventory() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{item.name}</h3>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                          {item.partNumber && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              #{item.partNumber}
+                            </Badge>
+                          )}
+                        </div>
                         {item.category && (
                           <p className="text-gray-600 mb-2">{item.category}</p>
                         )}
                         <div className="flex items-center space-x-4 text-sm">
                           {item.trackStock && (
-                            <span>Quantity: <strong>{item.quantity} units</strong></span>
+                            <span>Quantity: <strong className={item.quantity === 0 ? 'text-red-600' : 'text-gray-900'}>{item.quantity} units</strong></span>
                           )}
                           {item.costPrice && (
                             <span>Cost: <strong>£{parseFloat(item.costPrice).toFixed(2)}</strong></span>
@@ -235,9 +242,6 @@ export default function Inventory() {
                           )}
                           <span>Total Value: <strong>£{totalItemValue.toFixed(2)}</strong></span>
                         </div>
-                        {item.partNumber && (
-                          <p className="text-sm text-gray-500 mt-2">Part #: {item.partNumber}</p>
-                        )}
                         {item.description && (
                           <p className="text-sm text-gray-500 mt-1">{item.description}</p>
                         )}
