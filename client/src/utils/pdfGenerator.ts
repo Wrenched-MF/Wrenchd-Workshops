@@ -2,12 +2,16 @@ import { apiRequest } from "@/lib/queryClient";
 
 export const generatePDF = async (type: string, id: string, fileName?: string) => {
   try {
+    console.log('Generating PDF for:', type, id);
     const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    console.log('PDF response:', response);
+    
     if (response.success) {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       
       const data = response.data;
+      console.log('PDF data:', data);
       
       // Company header
       doc.setFontSize(10);
@@ -244,11 +248,15 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       
       // Download the PDF
       const downloadFileName = fileName || `WRENCHD_${data.title.replace(/\s+/g, '_')}.pdf`;
+      console.log('Saving PDF as:', downloadFileName);
       doc.save(downloadFileName);
+      console.log('PDF saved successfully');
       
       return true;
+    } else {
+      console.error('PDF generation failed: response not successful');
+      return false;
     }
-    return false;
   } catch (error) {
     console.error('PDF generation failed:', error);
     return false;
@@ -257,35 +265,43 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
 
 export const previewPDF = async (type: string, id: string) => {
   try {
+    console.log('Previewing PDF for:', type, id);
     const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    
     if (response.success) {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       
       const data = response.data;
       
-      // Same PDF generation logic but return blob for preview
-      // Company header
+      // Quick preview with basic content
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
       doc.text('WRENCH\'D AUTO REPAIRS', 140, 15);
       doc.text('Mobile Mechanic Services', 140, 20);
       
-      // Document title
       doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
       doc.text(data.title, 15, 55);
       
-      // Return PDF as blob for preview
+      doc.setFontSize(12);
+      doc.text(`Document Type: ${type}`, 15, 80);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, 95);
+      
+      // Create blob and open in new window
       const pdfBlob = doc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Open in new window for preview
-      window.open(pdfUrl, '_blank');
+      const newWindow = window.open(pdfUrl, '_blank');
+      if (!newWindow) {
+        alert('Please allow popups to preview PDFs');
+        return false;
+      }
       
+      console.log('PDF preview opened successfully');
       return true;
+    } else {
+      console.error('PDF preview failed: response not successful');
+      return false;
     }
-    return false;
   } catch (error) {
     console.error('PDF preview failed:', error);
     return false;
