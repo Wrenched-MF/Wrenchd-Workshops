@@ -54,6 +54,7 @@ export default function Jobs() {
       console.log("Job created successfully");
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] }); // Refresh inventory
       toast({ title: "Job created successfully" });
       setShowAddForm(false);
     },
@@ -73,6 +74,8 @@ export default function Jobs() {
     onSuccess: (updatedJob: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] }); // Refresh inventory when job status changes
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] }); // Refresh low stock alerts
       
       // Auto-generate receipt PDF when job is completed
       if (updatedJob && updatedJob.status === 'completed') {
@@ -119,6 +122,8 @@ export default function Jobs() {
       apiRequest(`/api/jobs/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] }); // Refresh inventory
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] }); // Refresh low stock alerts
       setShowEditForm(false);
       setEditingJob(null);
     },

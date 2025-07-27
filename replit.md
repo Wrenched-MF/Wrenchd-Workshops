@@ -24,6 +24,9 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Job list ordering** - Newest jobs appear at top of list for better workflow
 - **COMPLETED: Daily cleanup system** - API endpoint to clean old jobs while preserving receipts for storage efficiency
 - **COMPLETED: Cache invalidation** - Inventory updates refresh immediately without manual page refresh
+- **COMPLETED: Searchable customer/vehicle selection** - Replaced dropdowns with search interface for better UX with many customers
+- **COMPLETED: Future job preservation** - Daily cleanup preserves jobs with future scheduled dates
+- **COMPLETED: Time slot selection** - Dropdown with 30-minute intervals (8:00, 8:30, etc.) for easier scheduling
 - Replaced manual parts price entry with inventory-based part selection system
 - Search shows real-time filtering with stock levels and pricing information
 - New part creation pre-fills with search term and integrates seamlessly with inventory system
