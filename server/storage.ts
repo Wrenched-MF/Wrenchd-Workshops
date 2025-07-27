@@ -350,9 +350,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createJob(insertJob: InsertJob): Promise<Job> {
+    // Generate job number
+    const jobNumber = `JOB-${Date.now()}`;
+    
     const [job] = await db
       .insert(jobs)
-      .values(insertJob)
+      .values({ ...insertJob, jobNumber })
       .returning();
     return job;
   }
@@ -451,9 +454,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createQuote(insertQuote: InsertQuote): Promise<Quote> {
+    // Generate quote number
+    const quoteNumber = `QTE-${Date.now()}`;
+    
     const [quote] = await db
       .insert(quotes)
-      .values(insertQuote)
+      .values({ ...insertQuote, quoteNumber })
       .returning();
     return quote;
   }

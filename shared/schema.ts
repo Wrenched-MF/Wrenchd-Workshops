@@ -62,6 +62,7 @@ export const inventoryItems = pgTable("inventory_items", {
 
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobNumber: text("job_number").notNull().unique(),
   customerId: varchar("customer_id").notNull().references(() => customers.id),
   vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id),
   title: text("title").notNull(),
@@ -92,6 +93,8 @@ export const jobParts = pgTable("job_parts", {
 
 export const quotes = pgTable("quotes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quoteNumber: text("quote_number").notNull().unique(),
+  jobNumber: text("job_number"), // Reference to the job this quote was generated from
   customerId: varchar("customer_id").notNull().references(() => customers.id),
   vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id),
   title: text("title").notNull(),
@@ -365,6 +368,7 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit
 
 export const insertJobSchema = createInsertSchema(jobs).omit({
   id: true,
+  jobNumber: true,
   createdAt: true,
 }).extend({
   scheduledDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
@@ -377,6 +381,7 @@ export const insertJobPartSchema = createInsertSchema(jobParts).omit({
 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({
   id: true,
+  quoteNumber: true,
   createdAt: true,
 });
 

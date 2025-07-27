@@ -206,6 +206,9 @@ export default function Jobs() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">{job.title}</h3>
+                        {job.jobNumber && (
+                          <p className="text-sm font-mono text-blue-600 mb-1">{job.jobNumber}</p>
+                        )}
                         <p className="text-gray-600 mb-2">{job.customer.name} - {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}</p>
                         {job.description && (
                           <p className="text-sm text-gray-500 mb-3">{job.description}</p>

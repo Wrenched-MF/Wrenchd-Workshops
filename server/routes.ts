@@ -302,6 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const quoteData = {
         customerId: job.customerId,
         vehicleId: job.vehicleId,
+        jobNumber: job.jobNumber, // Reference to the source job
         title: job.title,
         description: job.description,
         status: 'pending',
@@ -659,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const pdfContent = {
-          title: `Quote ${quote.id.slice(0, 8)} - ${quote.title || 'Service'}`,
+          title: `${quote.quoteNumber || `Quote ${quote.id.slice(0, 8)}`} - ${quote.title || 'Service'}`,
           customer: quote.customer?.name || 'Unknown',
           vehicle: `${quote.vehicle?.year} ${quote.vehicle?.make} ${quote.vehicle?.model}`,
           quoteDate: quote.createdAt,
@@ -671,7 +672,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           laborTotal: quote.laborTotal,
           totalAmount: quote.totalAmount,
           notes: quote.notes || '',
-          description: quote.description || quote.title
+          description: quote.description || quote.title,
+          jobNumber: quote.jobNumber,
+          quoteNumber: quote.quoteNumber
         };
         
         res.json({ success: true, data: pdfContent });
@@ -739,11 +742,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...quotes.map(quote => ({
             id: quote.id,
             type: 'quote',
-            title: `Quote ${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.title || 'Service'}`,
+            title: `${quote.quoteNumber || `QTE-${quote.id.slice(0, 8)}`} - ${quote.title || 'Service'}`,
             date: quote.quoteDate || quote.createdAt,
             amount: parseFloat(quote.totalAmount || '0').toFixed(2),
             customer: quote.customer?.name || 'Unknown',
-            description: quote.description || quote.title || 'Service quote'
+            description: `${quote.description || quote.title || 'Service quote'}${quote.jobNumber ? ` (Job: ${quote.jobNumber})` : ''}`
           }))
       ];
       
