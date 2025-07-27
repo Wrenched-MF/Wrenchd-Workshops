@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { 
   Home, Briefcase, Calendar, Users, Car, Package, 
-  Truck, Receipt, BarChart, Download, Archive, Settings, Wrench 
+  Truck, Receipt, BarChart, Download, Archive, Cloud, Settings, Wrench 
 } from "lucide-react";
 
 const navigation = [
@@ -15,6 +15,7 @@ const navigation = [
   { name: "Receipts", href: "/receipts", icon: Receipt },
   { name: "Reports", href: "/reports", icon: BarChart },
   { name: "Archives", href: "/archives", icon: Archive },
+  { name: "Google Drive", href: "/google-drive", icon: Cloud },
   { name: "Backup", href: "/backup", icon: Download },
 ];
 
