@@ -42,7 +42,11 @@ export default function ServiceBayForm({ bay, onSuccess, onCancel }: ServiceBayF
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertServiceBay) => apiRequest("/api/service-bays", "POST", data),
+    mutationFn: async (data: InsertServiceBay) => {
+      console.log("Creating service bay with data:", data);
+      const response = await apiRequest("/api/service-bays", "POST", data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] });
       toast({ title: "Service bay created successfully" });
@@ -59,8 +63,11 @@ export default function ServiceBayForm({ bay, onSuccess, onCancel }: ServiceBayF
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<InsertServiceBay>) => 
-      apiRequest(`/api/service-bays/${bay!.id}`, "PUT", data),
+    mutationFn: async (data: Partial<InsertServiceBay>) => {
+      console.log("Updating service bay with data:", data);
+      const response = await apiRequest(`/api/service-bays/${bay!.id}`, "PUT", data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] });
       toast({ title: "Service bay updated successfully" });
