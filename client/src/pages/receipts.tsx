@@ -68,6 +68,10 @@ export default function Receipts() {
             <RotateCcw className="w-4 h-4" />
             <span>Returns ({pdfDocuments.filter(doc => doc.type === 'return').length})</span>
           </TabsTrigger>
+          <TabsTrigger value="quotes" className="flex items-center space-x-2">
+            <FileText className="w-4 h-4" />
+            <span>Quotes ({pdfDocuments.filter(doc => doc.type === 'quote').length})</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="job-receipts" className="space-y-6">
@@ -297,6 +301,70 @@ export default function Receipts() {
                                 size="sm" 
                                 variant="outline"
                                 onClick={() => handleGeneratePDF('return', doc.id)}
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                PDF
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="quotes" className="space-y-6">
+          {pdfDocuments.filter(doc => doc.type === 'quote').length === 0 ? (
+            <EmptyState
+              icon={<FileText className="w-8 h-8 text-gray-400" />}
+              title="No quote documents"
+              description="Generated quotes will appear here for download."
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Quote Documents</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Document</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pdfDocuments
+                      .filter(doc => doc.type === 'quote')
+                      .map((doc) => (
+                        <TableRow key={doc.id}>
+                          <TableCell className="font-medium">{doc.title}</TableCell>
+                          <TableCell>{doc.customer}</TableCell>
+                          <TableCell>{new Date(doc.date).toLocaleDateString()}</TableCell>
+                          <TableCell>£{doc.amount}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handlePreviewPDF('quote', doc.id)}
+                              >
+                                <FileText className="w-4 h-4 mr-1" />
+                                Preview
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleGeneratePDF('quote', doc.id)}
                               >
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF

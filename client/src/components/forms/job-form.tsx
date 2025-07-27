@@ -399,7 +399,7 @@ export default function JobForm({ onSubmit, isSubmitting, initialData }: JobForm
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="submit" disabled={isSubmitting} className="bg-wrench-green hover:bg-wrench-dark">
-            {isSubmitting ? "Creating..." : "Create Job"}
+            {isSubmitting ? (initialData ? "Updating..." : "Creating...") : (initialData ? "Update Job" : "Create Job")}
           </Button>
         </div>
       </form>

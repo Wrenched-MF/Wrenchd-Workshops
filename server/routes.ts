@@ -689,9 +689,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/receipts", async (req, res) => {
     try {
       const receipts = await storage.getReceipts();
-      // Also include approved purchase orders and returns as downloadable documents
+      // Also include approved purchase orders, returns, and quotes as downloadable documents
       const approvedPurchaseOrders = await storage.getPurchaseOrders();
       const approvedReturns = await storage.getReturns();
+      const quotes = await storage.getQuotes();
       
       const pdfDocuments = [
         ...approvedPurchaseOrders
@@ -715,6 +716,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             amount: returnItem.refundAmount,
             supplier: returnItem.supplier?.name || 'Unknown',
             description: `Return for ${returnItem.items?.length || 0} items`
+          })),
+        ...quotes.map(quote => ({
+            id: quote.id,
+            type: 'quote',
+            title: `Quote ${quote.quoteNumber || quote.id.slice(0, 8)}`,
+            date: quote.quoteDate,
+            amount: quote.totalAmount,
+            customer: quote.customer?.name || 'Unknown',
+            description: quote.title || 'Service quote'
           }))
       ];
       

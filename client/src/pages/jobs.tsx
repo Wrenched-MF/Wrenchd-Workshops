@@ -12,6 +12,8 @@ import type { JobWithDetails } from "@shared/schema";
 
 export default function Jobs() {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobWithDetails | null>(null);
 
   const { data: jobs = [], isLoading } = useQuery<JobWithDetails[]>({
     queryKey: ["/api/jobs"],
@@ -65,6 +67,21 @@ export default function Jobs() {
       console.error('Failed to generate receipt PDF:', error);
     }
   };
+
+  const handleEditJob = (job: JobWithDetails) => {
+    setEditingJob(job);
+    setShowEditForm(true);
+  };
+
+  const updateJobDetails = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      apiRequest("PUT", `/api/jobs/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      setShowEditForm(false);
+      setEditingJob(null);
+    },
+  });
 
   // Calculate stats
   const scheduledJobs = jobs.filter(job => job.status === 'scheduled').length;
@@ -263,7 +280,11 @@ export default function Jobs() {
                           Receipt PDF
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditJob(job)}
+                      >
                         Edit
                       </Button>
                       <Button 
@@ -282,6 +303,39 @@ export default function Jobs() {
           ))}
         </div>
       )}
+
+      {/* Edit Job Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Job</DialogTitle>
+            <DialogDescription>
+              Update job details, add more parts, or modify pricing.
+            </DialogDescription>
+          </DialogHeader>
+          {editingJob && (
+            <JobForm 
+              onSubmit={(data) => updateJobDetails.mutate({ id: editingJob.id, data })}
+              isSubmitting={updateJobDetails.isPending}
+              initialData={{
+                customerId: editingJob.customerId,
+                vehicleId: editingJob.vehicleId,
+                title: editingJob.title,
+                description: editingJob.description,
+                status: editingJob.status,
+                scheduledDate: editingJob.scheduledDate,
+                completedDate: editingJob.completedDate,
+                laborHours: editingJob.laborHours,
+                laborRate: editingJob.laborRate,
+                partsTotal: editingJob.partsTotal,
+                laborTotal: editingJob.laborTotal,
+                totalAmount: editingJob.totalAmount,
+                notes: editingJob.notes,
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
