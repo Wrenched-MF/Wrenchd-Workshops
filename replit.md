@@ -35,9 +35,11 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Template storage and activation** - Templates save with 50MB body limit for logo support
 - **COMPLETED: Professional PDF generation with authentic data** - Downloads contain complete job, customer, vehicle, and financial data
 - **COMPLETED: Manual receipt distribution workflow** - Removed automated email, focusing on view/download functionality
+- **COMPLETED: Preview functionality with real data** - Preview now shows actual receipt content instead of template placeholders
+- **COMPLETED: Enhanced financial calculations** - Proper UK VAT (20%) calculations with subtotal, VAT amount, and final totals
 - Template settings now properly control logo, company info, colors, fonts, and footer text
 - Enhanced PDF generator with proper template fetching and application logic for both generatePDF and previewPDF functions
-- Preview shows template styling, download generates complete business documents with live data from database
+- Both preview and download now use identical authentic business data from database
 
 ### Purchase Order & Return System (July 2025)
 - Added complete purchase order and return functionality for supplier management
