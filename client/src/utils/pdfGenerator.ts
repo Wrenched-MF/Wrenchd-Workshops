@@ -3,10 +3,13 @@ import { apiRequest } from "@/lib/queryClient";
 export const generatePDF = async (type: string, id: string, fileName?: string) => {
   try {
     console.log('Generating PDF for:', type, id);
-    const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    const res = await apiRequest("POST", "/api/generate-pdf", { type, id });
+    const response = await res.json();
     console.log('PDF response:', response);
+    console.log('Response success:', response?.success);
+    console.log('Response data:', response?.data);
     
-    if (response.success) {
+    if (response && response.success) {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       
@@ -266,9 +269,11 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
 export const previewPDF = async (type: string, id: string) => {
   try {
     console.log('Previewing PDF for:', type, id);
-    const response = await apiRequest("POST", "/api/generate-pdf", { type, id }) as any;
+    const res = await apiRequest("POST", "/api/generate-pdf", { type, id });
+    const response = await res.json();
+    console.log('Preview response:', response);
     
-    if (response.success) {
+    if (response && response.success) {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
       
