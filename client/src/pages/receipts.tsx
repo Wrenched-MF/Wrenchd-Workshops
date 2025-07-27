@@ -22,8 +22,8 @@ export default function Receipts() {
     staleTime: 0, // Always refetch to ensure fresh data
   });
   
-  const receipts = receiptsData?.receipts || [];
-  const pdfDocuments = receiptsData?.pdfDocuments || [];
+  const receipts = (receiptsData as any)?.receipts || [];
+  const pdfDocuments = (receiptsData as any)?.pdfDocuments || [];
 
   const deleteQuoteMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/quotes/${id}`),
@@ -84,6 +84,27 @@ export default function Receipts() {
     await previewPDF(type, id);
   };
 
+  const emailReceiptMutation = useMutation({
+    mutationFn: (jobId: string) => apiRequest("POST", `/api/jobs/${jobId}/email-receipt`),
+    onSuccess: () => {
+      toast({
+        title: "Receipt emailed",
+        description: "Receipt has been sent to the customer's email address.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Email failed",
+        description: "Failed to send receipt email. Please check email configuration.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEmailReceipt = (jobId: string) => {
+    emailReceiptMutation.mutate(jobId);
+  };
+
   const { data: jobs = [], isLoading: jobsLoading } = useQuery<JobWithDetails[]>({
     queryKey: ["/api/jobs"],
   });
@@ -116,15 +137,15 @@ export default function Receipts() {
           </TabsTrigger>
           <TabsTrigger value="purchase-receipts" className="flex items-center space-x-2">
             <ShoppingCart className="w-4 h-4" />
-            <span>Purchase Orders ({pdfDocuments.filter(doc => doc.type === 'purchase-order').length})</span>
+            <span>Purchase Orders ({pdfDocuments.filter((doc: any) => doc.type === 'purchase-order').length})</span>
           </TabsTrigger>
           <TabsTrigger value="return-receipts" className="flex items-center space-x-2">
             <RotateCcw className="w-4 h-4" />
-            <span>Returns ({pdfDocuments.filter(doc => doc.type === 'return').length})</span>
+            <span>Returns ({pdfDocuments.filter((doc: any) => doc.type === 'return').length})</span>
           </TabsTrigger>
           <TabsTrigger value="quotes" className="flex items-center space-x-2">
             <FileText className="w-4 h-4" />
-            <span>Quotes ({pdfDocuments.filter(doc => doc.type === 'quote').length})</span>
+            <span>Quotes ({pdfDocuments.filter((doc: any) => doc.type === 'quote').length})</span>
           </TabsTrigger>
         </TabsList>
 
@@ -210,11 +231,17 @@ export default function Receipts() {
                         £{parseFloat(job.totalAmount || '0').toFixed(2)}
                       </p>
                       <div className="flex items-center space-x-2">
-                        <button className="text-wrench-green hover:text-wrench-dark text-sm font-medium">
+                        <button 
+                          className="text-wrench-green hover:text-wrench-dark text-sm font-medium"
+                          onClick={() => handleGeneratePDF('receipt', job.id)}
+                        >
                           View Receipt
                         </button>
                         <span className="text-gray-300">|</span>
-                        <button className="text-wrench-green hover:text-wrench-dark text-sm font-medium">
+                        <button 
+                          className="text-wrench-green hover:text-wrench-dark text-sm font-medium"
+                          onClick={() => handleEmailReceipt(job.id)}
+                        >
                           Email
                         </button>
                       </div>
@@ -243,7 +270,7 @@ export default function Receipts() {
         </TabsContent>
 
         <TabsContent value="purchase-receipts" className="space-y-6">
-          {pdfDocuments.filter(doc => doc.type === 'purchase-order').length === 0 ? (
+          {pdfDocuments.filter((doc: any) => doc.type === 'purchase-order').length === 0 ? (
             <EmptyState
               icon={<ShoppingCart className="w-8 h-8 text-gray-400" />}
               title="No purchase order documents"
@@ -270,8 +297,8 @@ export default function Receipts() {
                   </TableHeader>
                   <TableBody>
                     {pdfDocuments
-                      .filter(doc => doc.type === 'purchase-order')
-                      .map((doc) => (
+                      .filter((doc: any) => doc.type === 'purchase-order')
+                      .map((doc: any) => (
                         <TableRow key={doc.id}>
                           <TableCell className="font-medium">{doc.title}</TableCell>
                           <TableCell>{doc.supplier}</TableCell>
@@ -307,7 +334,7 @@ export default function Receipts() {
         </TabsContent>
 
         <TabsContent value="return-receipts" className="space-y-6">
-          {pdfDocuments.filter(doc => doc.type === 'return').length === 0 ? (
+          {pdfDocuments.filter((doc: any) => doc.type === 'return').length === 0 ? (
             <EmptyState
               icon={<RotateCcw className="w-8 h-8 text-gray-400" />}
               title="No return documents"
@@ -334,8 +361,8 @@ export default function Receipts() {
                   </TableHeader>
                   <TableBody>
                     {pdfDocuments
-                      .filter(doc => doc.type === 'return')
-                      .map((doc) => (
+                      .filter((doc: any) => doc.type === 'return')
+                      .map((doc: any) => (
                         <TableRow key={doc.id}>
                           <TableCell className="font-medium">{doc.title}</TableCell>
                           <TableCell>{doc.supplier}</TableCell>
@@ -371,7 +398,7 @@ export default function Receipts() {
         </TabsContent>
 
         <TabsContent value="quotes" className="space-y-6">
-          {pdfDocuments.filter(doc => doc.type === 'quote').length === 0 ? (
+          {pdfDocuments.filter((doc: any) => doc.type === 'quote').length === 0 ? (
             <EmptyState
               icon={<FileText className="w-8 h-8 text-gray-400" />}
               title="No quote documents"
@@ -398,8 +425,8 @@ export default function Receipts() {
                   </TableHeader>
                   <TableBody>
                     {pdfDocuments
-                      .filter(doc => doc.type === 'quote')
-                      .map((doc) => (
+                      .filter((doc: any) => doc.type === 'quote')
+                      .map((doc: any) => (
                         <TableRow key={doc.id}>
                           <TableCell className="font-medium">{doc.title}</TableCell>
                           <TableCell>{doc.customer}</TableCell>

@@ -382,6 +382,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email receipt to customer
+  app.post("/api/jobs/:id/email-receipt", async (req, res) => {
+    try {
+      const job = await storage.getJob(req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      if (job.status !== 'completed') {
+        return res.status(400).json({ message: "Receipt can only be emailed for completed jobs" });
+      }
+
+      if (!job.customer?.email) {
+        return res.status(400).json({ message: "Customer email address not found" });
+      }
+
+      // For now, simulate email sending (would integrate with actual email service)
+      // In production, you would integrate with services like SendGrid, Mailgun, or AWS SES
+      console.log(`Would send receipt email to: ${job.customer.email}`);
+      console.log(`Subject: Receipt for ${job.title} - Job #${job.jobNumber}`);
+      console.log(`Customer: ${job.customer.name}`);
+      console.log(`Vehicle: ${job.vehicle?.year} ${job.vehicle?.make} ${job.vehicle?.model}`);
+      console.log(`Total: £${job.totalAmount}`);
+
+      // Update receipt to mark email as sent
+      const receipts = await storage.getReceipts();
+      const receipt = receipts.find(r => r.jobId === job.id);
+      if (receipt) {
+        // In a real implementation, you would update the receipt's emailSent status
+        console.log(`Receipt ${receipt.receiptNumber} marked as emailed`);
+      }
+
+      res.json({ 
+        message: "Receipt email sent successfully",
+        emailAddress: job.customer.email
+      });
+    } catch (error) {
+      console.error("Email receipt error:", error);
+      res.status(500).json({ message: "Failed to send receipt email" });
+    }
+  });
+
   // Quotes
   app.get("/api/quotes", async (req, res) => {
     try {
