@@ -95,13 +95,24 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
   };
 
   const handleSubmit = (data: InsertJob) => {
-    // Ensure dates are properly formatted - they should already be Date objects from the form
+    console.log("Form submission data:", data);
+    
+    // Ensure dates are properly formatted and service bay handling
     const formattedData = {
       ...data,
-      scheduledDate: data.scheduledDate || null,
-      completedDate: data.completedDate || null,
+      scheduledDate: data.scheduledDate ? (data.scheduledDate instanceof Date ? data.scheduledDate.toISOString() : data.scheduledDate) : null,
+      completedDate: data.completedDate ? (data.completedDate instanceof Date ? data.completedDate.toISOString() : data.completedDate) : null,
+      serviceBayId: data.serviceBayId === "none" ? null : data.serviceBayId,
+      // Convert string inputs to proper format
+      laborHours: data.laborHours?.toString() || "0",
+      laborRate: data.laborRate?.toString() || "50.00",
+      partsTotal: data.partsTotal?.toString() || "0",
+      laborTotal: data.laborTotal?.toString() || "0", 
+      totalAmount: data.totalAmount?.toString() || "0",
       jobParts: selectedParts,
     };
+    
+    console.log("Formatted data for submission:", formattedData);
     onSubmit(formattedData);
   };
 

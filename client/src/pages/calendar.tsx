@@ -252,7 +252,7 @@ export default function Calendar() {
                   <div className="font-medium text-sm flex items-center gap-2">
                     <div 
                       className="w-3 h-3 rounded" 
-                      style={{ backgroundColor: bay.color }}
+                      style={{ backgroundColor: bay.color || "#3B82F6" }}
                     />
                     {bay.name}
                   </div>
