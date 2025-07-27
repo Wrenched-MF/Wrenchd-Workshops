@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Enhanced Job Parts Selection with Search & Create Functionality (July 2025)
+- **COMPLETED: Smart parts search** - Type to search parts by name, part number, or description
+- **COMPLETED: Create parts on-the-fly** - When no matching parts found, create new inventory items directly from job form
+- **COMPLETED: Auto-calculated pricing** - Parts total automatically updates based on selected inventory pricing
+- **COMPLETED: Backend integration** - Job creation saves associated parts with proper inventory linking
+- Replaced manual parts price entry with inventory-based part selection system
+- Search shows real-time filtering with stock levels and pricing information
+- New part creation pre-fills with search term and integrates seamlessly with inventory system
+
 ### Complete PDF Template Customization System (July 2025)
 - Built comprehensive PDF template editor with live preview functionality
 - Implemented logo upload with drag-and-drop interface and positioning options (left, center, right)
