@@ -188,6 +188,9 @@ export const businessSettings = pgTable("business_settings", {
   businessAddress: text("business_address"),
   currency: text("currency").default("GBP"),
   logoUrl: text("logo_url"),
+  pdfTemplate: text("pdf_template").default("default"),
+  headerColor: text("header_color").default("#000000"),
+  accentColor: text("accent_color").default("#22c55e"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

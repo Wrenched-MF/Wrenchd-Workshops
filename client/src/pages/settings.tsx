@@ -43,6 +43,9 @@ export default function Settings() {
       businessAddress: "",
       currency: "GBP",
       logoUrl: "",
+      pdfTemplate: "default",
+      headerColor: "#000000",
+      accentColor: "#22c55e",
     },
   });
 
@@ -56,6 +59,9 @@ export default function Settings() {
         businessAddress: businessSettings.businessAddress || "",
         currency: businessSettings.currency || "GBP",
         logoUrl: businessSettings.logoUrl || "",
+        pdfTemplate: businessSettings.pdfTemplate || "default",
+        headerColor: businessSettings.headerColor || "#000000",
+        accentColor: businessSettings.accentColor || "#22c55e",
       });
     }
   }, [businessSettings, form]);
@@ -212,38 +218,140 @@ export default function Settings() {
 
             {/* Templates Tab */}
             <TabsContent value="templates" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Document Templates</h3>
-                <Button className="bg-wrench-green hover:bg-wrench-dark">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Create Template
-                </Button>
-              </div>
-
-              {/* Template List */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Default Receipt Template</h4>
-                      <p className="text-sm text-gray-500">Standard receipt layout for completed work</p>
-                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full mt-1">Default</span>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">PDF Templates</h3>
+                  <p className="text-gray-500 mb-6">Customize the design and layout of your PDF documents including purchase orders, returns, quotes, and receipts.</p>
                 </div>
 
-                <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                  <Button variant="outline">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Create Custom Template
-                  </Button>
-                </div>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Template Selection */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="pdfTemplate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>PDF Template Style</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || "default"}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select template style" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="default">Default WRENCH'D</SelectItem>
+                                <SelectItem value="professional">Professional</SelectItem>
+                                <SelectItem value="modern">Modern</SelectItem>
+                                <SelectItem value="minimal">Minimal</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="headerColor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Header Text Color</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  type="color"
+                                  {...field}
+                                  value={field.value || "#000000"}
+                                  className="w-16 h-10 p-1 border rounded"
+                                />
+                                <Input
+                                  type="text"
+                                  {...field}
+                                  value={field.value || "#000000"}
+                                  placeholder="#000000"
+                                  className="flex-1"
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="accentColor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Accent Color (Auto Repairs Text)</FormLabel>
+                            <FormControl>
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  type="color"
+                                  {...field}
+                                  value={field.value || "#22c55e"}
+                                  className="w-16 h-10 p-1 border rounded"
+                                />
+                                <Input
+                                  type="text"
+                                  {...field}
+                                  value={field.value || "#22c55e"}
+                                  placeholder="#22c55e"
+                                  className="flex-1"
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Template Preview */}
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h4 className="font-medium mb-3">Template Preview</h4>
+                      <div className="bg-white border rounded p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div 
+                              className="text-lg font-bold"
+                              style={{ color: form.watch('headerColor') || '#000000' }}
+                            >
+                              WRENCH'D
+                            </div>
+                            <div 
+                              className="text-sm font-semibold"
+                              style={{ color: form.watch('accentColor') || '#22c55e' }}
+                            >
+                              AUTO REPAIRS
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-gray-600">
+                            <div>Mobile Mechanic Services</div>
+                            <div>Phone: 07123 456789</div>
+                            <div>Email: info@wrenchd.com</div>
+                          </div>
+                        </div>
+                        <div className="border-t pt-2">
+                          <div className="text-sm font-semibold">Purchase Order #PO-12345</div>
+                          <div className="text-xs text-gray-500">Template: {form.watch('pdfTemplate') || 'default'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      disabled={updateSettingsMutation.isPending}
+                      className="w-full"
+                    >
+                      {updateSettingsMutation.isPending ? "Saving..." : "Save Template Settings"}
+                    </Button>
+                  </form>
+                </Form>
               </div>
             </TabsContent>
 

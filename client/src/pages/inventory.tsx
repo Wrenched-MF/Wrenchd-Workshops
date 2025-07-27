@@ -18,6 +18,8 @@ export default function Inventory() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const { data: items = [], isLoading } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"],
@@ -33,6 +35,17 @@ export default function Inventory() {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
       setShowAddForm(false);
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      apiRequest("PUT", `/api/inventory/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/low-stock"] });
+      setShowEditForm(false);
+      setEditingItem(null);
     },
   });
 
@@ -233,7 +246,14 @@ export default function Inventory() {
                         {isLowStock && (
                           <Badge variant="destructive">Low Stock</Badge>
                         )}
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            setEditingItem(item);
+                            setShowEditForm(true);
+                          }}
+                        >
                           Edit
                         </Button>
                         <Button 
@@ -265,6 +285,33 @@ export default function Inventory() {
           })}
         </div>
       )}
+
+      {/* Add Item Dialog */}
+      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Item</DialogTitle>
+          </DialogHeader>
+          <InventoryForm 
+            onSubmit={createItemMutation.mutate}
+            isSubmitting={createItemMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Item</DialogTitle>
+          </DialogHeader>
+          <InventoryForm 
+            onSubmit={(data) => updateItemMutation.mutate({ id: editingItem.id, data })}
+            isSubmitting={updateItemMutation.isPending}
+            initialData={editingItem}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
