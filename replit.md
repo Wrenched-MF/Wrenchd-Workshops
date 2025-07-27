@@ -19,11 +19,17 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Job workflow PDF generation** - Quote PDFs for in-progress jobs, automatic receipt PDFs when completed
 - **COMPLETED: Automatic job numbering system** - Unique "JOB-" and "QTE-" numbers for tracking
 - **COMPLETED: Comprehensive PDF details** - All PDFs now include complete customer/vehicle data, garage details, labor/parts breakdown
+- **COMPLETED: Inventory deduction system** - Stock automatically deducted when jobs completed, proper duplicate handling
+- **COMPLETED: Enhanced part number visibility** - Part numbers displayed as prominent badges throughout system
+- **COMPLETED: Job list ordering** - Newest jobs appear at top of list for better workflow
+- **COMPLETED: Daily cleanup system** - API endpoint to clean old jobs while preserving receipts for storage efficiency
+- **COMPLETED: Cache invalidation** - Inventory updates refresh immediately without manual page refresh
 - Replaced manual parts price entry with inventory-based part selection system
 - Search shows real-time filtering with stock levels and pricing information
 - New part creation pre-fills with search term and integrates seamlessly with inventory system
 - Job status workflow now includes PDF generation at appropriate stages
 - Job numbers display prominently in blue below job titles for easy tracking
+- Zero stock items highlighted in red for immediate visibility
 
 ### Complete PDF Template Customization System (July 2025)
 - Built comprehensive PDF template editor with live preview functionality

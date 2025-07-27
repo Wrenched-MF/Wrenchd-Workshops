@@ -20,7 +20,7 @@ import {
   purchaseOrders, purchaseOrderItems, returns, returnItems, receipts, receiptArchives, archiveReceipts, businessSettings, customTemplates
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Customers
@@ -332,7 +332,7 @@ export class DatabaseStorage implements IStorage {
 
   // Jobs
   async getJobs(): Promise<JobWithDetails[]> {
-    const jobList = await db.select().from(jobs);
+    const jobList = await db.select().from(jobs).orderBy(desc(jobs.createdAt));
     const result: JobWithDetails[] = [];
     
     for (const job of jobList) {

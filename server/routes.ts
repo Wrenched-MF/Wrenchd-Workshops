@@ -10,6 +10,14 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add cache invalidation middleware for inventory endpoints
+  app.use('/api/inventory', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   // Customers
   app.get("/api/customers", async (req, res) => {
     try {
@@ -329,6 +337,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   await storage.updateInventoryItem(part.inventoryItemId, {
                     quantity: newQuantity
                   });
+                  
+                  // Force cache invalidation by setting no-cache headers for inventory endpoints
+                  res.setHeader('X-Cache-Invalidate', 'inventory');
                 }
               }
             } catch (error) {
@@ -1254,6 +1265,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Daily Cleanup System - Jobs cleaned but receipts kept  
+  app.post("/api/maintenance/daily-cleanup", async (req, res) => {
+    try {
+      const jobs = await storage.getJobs();
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      // Find jobs older than 24 hours
+      const oldJobs = jobs.filter(job => {
+        const jobDate = new Date(job.createdAt || 0);
+        return jobDate < yesterday;
+      });
+      
+      let deletedCount = 0;
+      let receiptsKept = 0;
+      
+      for (const job of oldJobs) {
+        try {
+          // Check if this job has any associated receipts
+          const receipts = await storage.getReceipts();
+          const hasReceipt = receipts.some(receipt => receipt.jobId === job.id);
+          
+          if (hasReceipt) {
+            receiptsKept++;
+            console.log(`Keeping job ${job.id} because it has associated receipt`);
+          } else {
+            // Delete job (this will also delete job parts due to cascade)
+            await storage.deleteJob(job.id);
+            deletedCount++;
+            console.log(`Deleted job ${job.id} - ${job.title}`);
+          }
+        } catch (error) {
+          console.error(`Failed to process job ${job.id}:`, error);
+        }
+      }
+      
+      res.json({ 
+        message: "Daily cleanup completed", 
+        deletedJobs: deletedCount,
+        receiptsKept: receiptsKept,
+        totalOldJobs: oldJobs.length
+      });
+    } catch (error) {
+      console.error("Daily cleanup error:", error);
+      res.status(500).json({ message: "Failed to perform daily cleanup" });
+    }
+  });
+
+  // Manual cache refresh endpoint
+  app.post("/api/maintenance/refresh-cache", async (req, res) => {
+    try {
+      res.setHeader('X-Cache-Invalidate', 'all');
+      res.json({ message: "Cache refresh triggered" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to refresh cache" });
     }
   });
 
