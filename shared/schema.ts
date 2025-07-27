@@ -363,6 +363,9 @@ export const insertBusinessSettingsSchema = createInsertSchema(businessSettings)
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
   id: true,
   createdAt: true,
+}).extend({
+  orderDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  expectedDelivery: z.string().or(z.date()).transform((val) => val ? new Date(val) : null).nullable(),
 });
 
 export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({
@@ -372,6 +375,8 @@ export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderIte
 export const insertReturnSchema = createInsertSchema(returns).omit({
   id: true,
   createdAt: true,
+}).extend({
+  returnDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : new Date()).optional(),
 });
 
 export const insertReturnItemSchema = createInsertSchema(returnItems).omit({

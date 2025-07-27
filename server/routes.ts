@@ -316,6 +316,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract the items from the request to handle separately
       const { items, ...orderData } = req.body;
       
+      // Remove date conversions as Zod schema now handles this
+      
       // Validate the main order data
       const validatedOrderData = insertPurchaseOrderSchema.parse(orderData);
       
@@ -394,6 +396,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract the items from the request to handle separately
       const { items, ...returnData } = req.body;
+      
+      // Remove date conversions as Zod schema now handles this
       
       // Validate the main return data
       const validatedReturnData = insertReturnSchema.parse(returnData);
