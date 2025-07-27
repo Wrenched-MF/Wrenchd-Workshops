@@ -96,19 +96,41 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
 
   const handleSubmit = (data: InsertJob) => {
     console.log("Form submission data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Check for required fields
+    if (!data.customerId) {
+      console.error("Missing customer ID");
+      return;
+    }
+    if (!data.vehicleId) {
+      console.error("Missing vehicle ID");
+      return;
+    }
+    if (!data.title) {
+      console.error("Missing job title");
+      return;
+    }
     
     // Ensure dates are properly formatted and service bay handling
     const formattedData = {
       ...data,
+      customerId: data.customerId || "",
+      vehicleId: data.vehicleId || "",
+      title: data.title || "",
+      description: data.description || "",
+      status: data.status || "scheduled",
       scheduledDate: data.scheduledDate ? (data.scheduledDate instanceof Date ? data.scheduledDate.toISOString() : data.scheduledDate) : null,
       completedDate: data.completedDate ? (data.completedDate instanceof Date ? data.completedDate.toISOString() : data.completedDate) : null,
-      serviceBayId: data.serviceBayId === "none" ? null : data.serviceBayId,
+      serviceBayId: data.serviceBayId === "none" || !data.serviceBayId ? null : data.serviceBayId,
       // Convert string inputs to proper format
       laborHours: data.laborHours?.toString() || "0",
       laborRate: data.laborRate?.toString() || "50.00",
       partsTotal: data.partsTotal?.toString() || "0",
       laborTotal: data.laborTotal?.toString() || "0", 
       totalAmount: data.totalAmount?.toString() || "0",
+      notes: data.notes || "",
+      photos: data.photos || [],
       jobParts: selectedParts,
     };
     

@@ -20,11 +20,20 @@ export default function Jobs() {
   });
 
   const createJobMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/jobs", data),
+    mutationFn: async (data: any) => {
+      console.log("Creating job with data:", data);
+      const response = await apiRequest("POST", "/api/jobs", data);
+      console.log("Job creation response:", response);
+      return response;
+    },
     onSuccess: () => {
+      console.log("Job created successfully");
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
       setShowAddForm(false);
+    },
+    onError: (error: any) => {
+      console.error("Job creation failed:", error);
     },
   });
 
