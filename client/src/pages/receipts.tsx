@@ -18,6 +18,8 @@ export default function Receipts() {
   
   const { data: receiptsData, isLoading: receiptsLoading } = useQuery({
     queryKey: ["/api/receipts"],
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
   
   const receipts = receiptsData?.receipts || [];

@@ -659,18 +659,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const pdfContent = {
-          title: `Quote ${quote.quoteNumber}`,
+          title: `Quote ${quote.id.slice(0, 8)} - ${quote.title || 'Service'}`,
           customer: quote.customer?.name || 'Unknown',
           vehicle: `${quote.vehicle?.year} ${quote.vehicle?.make} ${quote.vehicle?.model}`,
-          quoteDate: quote.quoteDate,
+          quoteDate: quote.createdAt,
           validUntil: quote.validUntil,
           laborHours: quote.laborHours,
           laborRate: quote.laborRate,
-          parts: quote.parts,
-          subtotal: quote.subtotal,
-          tax: quote.tax,
-          total: quote.total,
-          notes: quote.notes
+          parts: quote.parts || [],
+          partsTotal: quote.partsTotal,
+          laborTotal: quote.laborTotal,
+          totalAmount: quote.totalAmount,
+          notes: quote.notes || '',
+          description: quote.description || quote.title
         };
         
         res.json({ success: true, data: pdfContent });
@@ -740,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'quote',
             title: `Quote ${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.title || 'Service'}`,
             date: quote.quoteDate || quote.createdAt,
-            amount: quote.totalAmount || '0',
+            amount: parseFloat(quote.totalAmount || '0').toFixed(2),
             customer: quote.customer?.name || 'Unknown',
             description: quote.description || quote.title || 'Service quote'
           }))
