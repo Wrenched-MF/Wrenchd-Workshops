@@ -15,6 +15,19 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import JobPartsSelector from "./job-parts-selector";
 
+// Generate time slots (8 AM to 6 PM in 30-minute intervals)
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 18; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      if (hour === 18 && minute > 0) break; // Stop at 6 PM
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(time);
+    }
+  }
+  return slots;
+};
+
 interface JobPart {
   inventoryItemId: string;
   partName: string;
@@ -343,13 +356,20 @@ export default function JobForm({ onSubmit, isSubmitting, initialData, initialPa
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Start Time</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="time"
-                    {...field}
-                    value={field.value || ""}
-                  />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {generateTimeSlots().map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

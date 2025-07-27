@@ -8,12 +8,14 @@ import EmptyState from "@/components/ui/empty-state";
 import JobForm from "@/components/forms/job-form";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { JobWithDetails } from "@shared/schema";
 
 export default function Jobs() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingJob, setEditingJob] = useState<JobWithDetails | null>(null);
+  const { toast } = useToast();
 
   const { data: jobs = [], isLoading } = useQuery<JobWithDetails[]>({
     queryKey: ["/api/jobs"],
@@ -30,10 +32,12 @@ export default function Jobs() {
       console.log("Job created successfully");
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] }); // Refresh calendar data
+      toast({ title: "Job created successfully" });
       setShowAddForm(false);
     },
     onError: (error: any) => {
       console.error("Job creation failed:", error);
+      toast({ title: "Failed to create job", variant: "destructive" });
     },
   });
 
