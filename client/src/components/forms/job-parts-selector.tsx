@@ -44,7 +44,7 @@ export default function JobPartsSelector({ parts, onPartsChange, onTotalChange }
   });
 
   const createItemMutation = useMutation({
-    mutationFn: (data: InsertInventoryItem) => apiRequest("POST", "/api/inventory", data),
+    mutationFn: (data: InsertInventoryItem) => apiRequest("/api/inventory", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       setShowCreateForm(false);

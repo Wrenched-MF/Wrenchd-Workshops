@@ -17,7 +17,7 @@ export default function Vehicles() {
   });
 
   const createVehicleMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/vehicles", data),
+    mutationFn: (data: any) => apiRequest("/api/vehicles", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       setShowAddForm(false);
@@ -25,7 +25,7 @@ export default function Vehicles() {
   });
 
   const deleteVehicleMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/vehicles/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/vehicles/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
     },

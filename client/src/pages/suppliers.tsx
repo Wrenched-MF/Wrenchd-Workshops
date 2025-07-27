@@ -39,7 +39,7 @@ export default function Suppliers() {
   });
 
   const createSupplierMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/suppliers", data),
+    mutationFn: (data: any) => apiRequest("/api/suppliers", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
       setShowAddForm(false);
@@ -47,14 +47,14 @@ export default function Suppliers() {
   });
 
   const deleteSupplierMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/suppliers/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/suppliers/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
     },
   });
 
   const createPurchaseOrderMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/purchase-orders", data),
+    mutationFn: (data: any) => apiRequest("/api/purchase-orders", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
       setShowPurchaseOrderForm(false);
@@ -62,7 +62,7 @@ export default function Suppliers() {
   });
 
   const createReturnMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/returns", data),
+    mutationFn: (data: any) => apiRequest("/api/returns", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/returns"] });
       setShowReturnForm(false);
@@ -71,7 +71,7 @@ export default function Suppliers() {
 
   const updatePurchaseOrderMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/purchase-orders/${id}`, data),
+      apiRequest(`/api/purchase-orders/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/purchase-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
@@ -80,7 +80,7 @@ export default function Suppliers() {
 
   const updateReturnMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/returns/${id}`, data),
+      apiRequest(`/api/returns/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/returns"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });

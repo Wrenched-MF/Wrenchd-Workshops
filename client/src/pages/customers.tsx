@@ -19,7 +19,7 @@ export default function Customers() {
   });
 
   const createCustomerMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/customers", data),
+    mutationFn: (data: any) => apiRequest("/api/customers", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       setShowAddForm(false);
@@ -27,7 +27,7 @@ export default function Customers() {
   });
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/customers/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/customers/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
     },

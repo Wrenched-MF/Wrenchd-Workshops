@@ -30,7 +30,7 @@ export default function ArchivesPage() {
   });
 
   const createArchiveMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/receipt-archives/auto-create", data),
+    mutationFn: (data: any) => apiRequest("/api/receipt-archives/auto-create", "POST", data),
     onSuccess: () => {
       toast({
         title: "Archive created",
@@ -48,7 +48,7 @@ export default function ArchivesPage() {
   });
 
   const backupArchiveMutation = useMutation({
-    mutationFn: (archiveId: string) => apiRequest("POST", `/api/receipt-archives/${archiveId}/backup`),
+    mutationFn: (archiveId: string) => apiRequest(`/api/receipt-archives/${archiveId}/backup`, "POST"),
     onSuccess: () => {
       toast({
         title: "Backup completed",

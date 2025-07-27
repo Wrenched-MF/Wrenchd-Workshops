@@ -81,7 +81,7 @@ export default function Settings() {
 
   const updateSettingsMutation = useMutation({
     mutationFn: (data: InsertBusinessSettings) => 
-      apiRequest("PUT", "/api/settings/business", data),
+      apiRequest("/api/settings/business", "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings/business"] });
       toast({

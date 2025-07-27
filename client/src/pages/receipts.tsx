@@ -26,7 +26,7 @@ export default function Receipts() {
   const pdfDocuments = (receiptsData as any)?.pdfDocuments || [];
 
   const deleteQuoteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/quotes/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/quotes/${id}`, "DELETE"),
     onSuccess: (_, deletedId) => {
       // Optimistically remove from cache
       queryClient.setQueryData(["/api/receipts"], (oldData: any) => {
@@ -57,7 +57,7 @@ export default function Receipts() {
   });
 
   const deleteReceiptMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/receipts/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/receipts/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/receipts"] });
       toast({
