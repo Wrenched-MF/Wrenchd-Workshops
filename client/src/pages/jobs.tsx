@@ -238,7 +238,7 @@ export default function Jobs() {
         />
       ) : (
         <div className="space-y-4">
-          {jobs.map((job) => (
+          {jobs.sort((a, b) => new Date(b.scheduledDate || 0).getTime() - new Date(a.scheduledDate || 0).getTime()).map((job) => (
             <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4 flex-1">

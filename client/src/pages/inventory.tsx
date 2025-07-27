@@ -218,7 +218,7 @@ export default function Inventory() {
         />
       ) : (
         <div className="space-y-4">
-          {filteredItems.map((item) => {
+          {filteredItems.sort((a, b) => a.name.localeCompare(b.name)).map((item) => {
             const isLowStock = item.trackStock && (item.quantity || 0) <= (item.lowStockThreshold || 5);
             const totalItemValue = parseFloat(item.costPrice || '0') * (item.quantity || 0);
 

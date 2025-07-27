@@ -75,7 +75,7 @@ export default function Vehicles() {
         />
       ) : (
         <div className="space-y-4">
-          {vehicles.map((vehicle) => (
+          {vehicles.sort((a, b) => b.year - a.year || a.make.localeCompare(b.make)).map((vehicle) => (
             <div key={vehicle.id} className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

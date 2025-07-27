@@ -37,8 +37,8 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
     // Get PDF data, business settings, and active template for this document type
     const [pdfRes, settingsRes, templateRes] = await Promise.all([
       apiRequest("/api/generate-pdf", "POST", { type, id }),
-      apiRequest("GET", "/api/settings/business"),
-      apiRequest("GET", `/api/templates/active/${templateType}`)
+      apiRequest("/api/settings/business", "GET"),
+      apiRequest(`/api/templates/active/${templateType}`, "GET")
     ]);
     
     const response = await pdfRes.json();
@@ -639,8 +639,8 @@ export const previewPDF = async (type: string, id: string) => {
     // Get PDF data, business settings, and active template for preview
     const [pdfRes, settingsRes, templateRes] = await Promise.all([
       apiRequest("/api/generate-pdf", "POST", { type, id }),
-      apiRequest("GET", "/api/settings/business"),
-      apiRequest("GET", `/api/templates/active/${templateType}`)
+      apiRequest("/api/settings/business", "GET"),
+      apiRequest(`/api/templates/active/${templateType}`, "GET")
     ]);
     
     const response = await pdfRes.json();

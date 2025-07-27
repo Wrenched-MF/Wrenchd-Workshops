@@ -75,13 +75,49 @@ export default function Receipts() {
   });
 
   const handleGeneratePDF = async (type: string, id: string) => {
-    const { generatePDF } = await import('@/utils/pdfGenerator');
-    await generatePDF(type, id);
+    try {
+      console.log(`Generating PDF for ${type} with ID: ${id}`);
+      const { generatePDF } = await import('@/utils/pdfGenerator');
+      const success = await generatePDF(type, id);
+      if (success) {
+        toast({ title: "PDF generated successfully" });
+      } else {
+        toast({ 
+          title: "PDF generation failed", 
+          description: "Please try again",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({ 
+        title: "PDF generation failed", 
+        description: "An error occurred while generating the PDF",
+        variant: "destructive" 
+      });
+    }
   };
 
   const handlePreviewPDF = async (type: string, id: string) => {
-    const { previewPDF } = await import('@/utils/pdfGenerator');
-    await previewPDF(type, id);
+    try {
+      console.log(`Previewing PDF for ${type} with ID: ${id}`);
+      const { previewPDF } = await import('@/utils/pdfGenerator');
+      const success = await previewPDF(type, id);
+      if (!success) {
+        toast({ 
+          title: "PDF preview failed", 
+          description: "Please try again",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('PDF preview error:', error);
+      toast({ 
+        title: "PDF preview failed", 
+        description: "An error occurred while previewing the PDF",
+        variant: "destructive" 
+      });
+    }
   };
 
   // Removed email functionality as requested - manual emailing preferred
@@ -201,7 +237,7 @@ export default function Receipts() {
             />
           ) : (
             <div className="space-y-4">
-              {completedJobs.map((job) => (
+              {completedJobs.sort((a, b) => new Date(b.scheduledDate || 0).getTime() - new Date(a.scheduledDate || 0).getTime()).map((job) => (
                 <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

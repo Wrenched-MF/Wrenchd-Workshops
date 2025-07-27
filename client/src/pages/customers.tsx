@@ -100,7 +100,7 @@ export default function Customers() {
         />
       ) : (
         <div className="space-y-4">
-          {filteredCustomers.map((customer) => (
+          {filteredCustomers.sort((a, b) => a.name.localeCompare(b.name)).map((customer) => (
             <div key={customer.id} className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

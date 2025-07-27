@@ -116,13 +116,49 @@ export default function Suppliers() {
   });
 
   const handleGeneratePDF = async (type: string, id: string) => {
-    const { generatePDF } = await import('@/utils/pdfGenerator');
-    await generatePDF(type, id);
+    try {
+      console.log(`Generating PDF for ${type} with ID: ${id}`);
+      const { generatePDF } = await import('@/utils/pdfGenerator');
+      const success = await generatePDF(type, id);
+      if (success) {
+        toast({ title: "PDF generated successfully" });
+      } else {
+        toast({ 
+          title: "PDF generation failed", 
+          description: "Please try again",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({ 
+        title: "PDF generation failed", 
+        description: "An error occurred while generating the PDF",
+        variant: "destructive" 
+      });
+    }
   };
 
   const handlePreviewPDF = async (type: string, id: string) => {
-    const { previewPDF } = await import('@/utils/pdfGenerator');
-    await previewPDF(type, id);
+    try {
+      console.log(`Previewing PDF for ${type} with ID: ${id}`);
+      const { previewPDF } = await import('@/utils/pdfGenerator');
+      const success = await previewPDF(type, id);
+      if (!success) {
+        toast({ 
+          title: "PDF preview failed", 
+          description: "Please try again",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('PDF preview error:', error);
+      toast({ 
+        title: "PDF preview failed", 
+        description: "An error occurred while previewing the PDF",
+        variant: "destructive" 
+      });
+    }
   };
 
   const filteredSuppliers = suppliers.filter(supplier =>
@@ -196,7 +232,7 @@ export default function Suppliers() {
             />
           ) : (
             <div className="space-y-4">
-              {filteredSuppliers.map((supplier) => (
+              {filteredSuppliers.sort((a, b) => a.name.localeCompare(b.name)).map((supplier) => (
                 <div key={supplier.id} className="bg-white rounded-xl border border-gray-200 p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -286,7 +322,7 @@ export default function Suppliers() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {purchaseOrders.map((order) => (
+                    {purchaseOrders.sort((a, b) => new Date(b.orderDate || 0).getTime() - new Date(a.orderDate || 0).getTime()).map((order) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">{order.orderNumber}</TableCell>
                         <TableCell>{order.supplier.name}</TableCell>
@@ -402,7 +438,7 @@ export default function Suppliers() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {returns.map((returnItem) => (
+                    {returns.sort((a, b) => new Date(b.returnDate || 0).getTime() - new Date(a.returnDate || 0).getTime()).map((returnItem) => (
                       <TableRow key={returnItem.id}>
                         <TableCell className="font-medium">{returnItem.returnNumber}</TableCell>
                         <TableCell>{returnItem.supplier.name}</TableCell>
