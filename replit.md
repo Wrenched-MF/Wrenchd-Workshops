@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Image Upload & Enhanced Branding System (July 2025)
+- Fixed PDF generation response parsing issue that was preventing proper downloads
+- Enhanced PDF branding with larger WRENCH'D logo and green "AUTO REPAIRS" styling
+- Added comprehensive image upload functionality for inventory parts
+- Implemented image preview and removal capabilities in inventory forms
+- Enhanced inventory display to show part images alongside item details
+- Added file validation (size limits, type checking) for uploaded images
+- Improved professional PDF formatting with better company branding
+
 ### Purchase Order & Return System (July 2025)
 - Added complete purchase order and return functionality for supplier management
 - Implemented automatic inventory stock updates when orders/returns are approved

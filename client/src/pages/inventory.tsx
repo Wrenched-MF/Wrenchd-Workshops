@@ -192,8 +192,16 @@ export default function Inventory() {
             return (
               <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-start space-x-4">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Package className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {item.imageUrl ? (
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="w-8 h-8 text-gray-400" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between">

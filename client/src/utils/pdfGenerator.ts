@@ -16,13 +16,16 @@ export const generatePDF = async (type: string, id: string, fileName?: string) =
       const data = response.data;
       console.log('PDF data:', data);
       
-      // Company header with logo space
-      doc.setFontSize(16);
+      // Company header with enhanced branding
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('WRENCH\'D', 15, 20);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      doc.text('AUTO REPAIRS', 15, 28);
+      doc.setFontSize(16);
+      doc.setTextColor(34, 197, 94); // Green color for AUTO REPAIRS
+      doc.setFont('helvetica', 'bold');
+      doc.text('AUTO REPAIRS', 15, 30);
+      doc.setTextColor(0, 0, 0); // Reset to black
       
       // Company details (right side)
       doc.setFontSize(10);
@@ -291,12 +294,15 @@ export const previewPDF = async (type: string, id: string) => {
       const data = response.data;
       
       // Branded preview header
-      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('WRENCH\'D', 15, 20);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      doc.text('AUTO REPAIRS', 15, 28);
+      doc.setFontSize(16);
+      doc.setTextColor(34, 197, 94); // Green color
+      doc.setFont('helvetica', 'bold');
+      doc.text('AUTO REPAIRS', 15, 30);
+      doc.setTextColor(0, 0, 0); // Reset to black
       
       doc.setFontSize(10);
       doc.text('Mobile Mechanic Services', 140, 15);
