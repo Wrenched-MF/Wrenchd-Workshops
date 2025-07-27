@@ -15,7 +15,6 @@ import Receipts from "@/pages/receipts";
 import Reports from "@/pages/reports";
 import Backup from "@/pages/backup";
 import Archives from "@/pages/archives";
-import GoogleDrive from "@/pages/google-drive";
 import Settings from "@/pages/settings";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -40,7 +39,6 @@ function Router() {
             <Route path="/reports" component={Reports} />
             <Route path="/backup" component={Backup} />
             <Route path="/archives" component={Archives} />
-            <Route path="/google-drive" component={GoogleDrive} />
             <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>

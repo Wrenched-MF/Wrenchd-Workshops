@@ -8,8 +8,6 @@ import {
   insertPurchaseOrderSchema, insertReturnSchema,
   insertBusinessSettingsSchema, insertCustomTemplateSchema
 } from "@shared/schema";
-import { googleAuthService } from './googleAuth.js';
-import { googleDriveService } from './googleDrive.js';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Customers
@@ -566,112 +564,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google Drive Authentication Routes
-  app.get("/api/google-drive/auth-url", (req, res) => {
-    try {
-      const authUrl = googleAuthService.getAuthUrl();
-      res.json({ authUrl });
-    } catch (error) {
-      console.error("Google Drive auth URL error:", error);
-      res.status(500).json({ message: "Failed to generate Google Drive auth URL" });
-    }
-  });
-
-  app.post("/api/google-drive/auth-callback", async (req, res) => {
-    try {
-      const { code } = req.body;
-      if (!code) {
-        return res.status(400).json({ message: "Authorization code required" });
-      }
-
-      const result = await googleAuthService.getTokens(code);
-      if (!result.success) {
-        return res.status(400).json({ message: result.error });
-      }
-
-      // Store tokens for the session (in production, you'd store this securely)
-      googleAuthService.setTokens(result.tokens);
-      
-      res.json({ 
-        message: "Google Drive authentication successful",
-        authenticated: true 
-      });
-    } catch (error) {
-      console.error("Google Drive auth callback error:", error);
-      res.status(500).json({ message: "Failed to authenticate with Google Drive" });
-    }
-  });
-
-  app.get("/api/google-drive/status", (req, res) => {
-    try {
-      const isConfigured = googleDriveService.isConfigured();
-      res.json({ 
-        configured: isConfigured,
-        folderUrl: "https://drive.google.com/drive/folders/1z5IXFZN7FHWRAJyCyJbD9G7sUKlr55td"
-      });
-    } catch (error) {
-      console.error("Google Drive status error:", error);
-      res.status(500).json({ message: "Failed to check Google Drive status" });
-    }
-  });
-
-  app.post("/api/google-drive/upload-receipt", async (req, res) => {
-    try {
-      const { receiptId } = req.body;
-      if (!receiptId) {
-        return res.status(400).json({ message: "Receipt ID required" });
-      }
-
-      // Get receipt data
-      const receipt = await storage.getReceipt(receiptId);
-      if (!receipt) {
-        return res.status(404).json({ message: "Receipt not found" });
-      }
-
-      // Generate PDF content (simplified - you'd use your actual PDF generator)
-      const pdfContent = `Receipt ${receipt.receiptNumber} - PDF content would be generated here`;
-      const pdfBuffer = Buffer.from(pdfContent, 'utf8');
-      
-      const filename = `${receipt.receiptNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
-      
-      const result = await googleDriveService.uploadReceiptPDF(pdfBuffer, filename);
-      
-      if (result.success) {
-        res.json({
-          message: "Receipt uploaded to Google Drive successfully",
-          fileId: result.fileId,
-          filename
-        });
-      } else {
-        res.status(500).json({ 
-          message: "Failed to upload to Google Drive",
-          error: result.error 
-        });
-      }
-    } catch (error) {
-      console.error("Google Drive upload error:", error);
-      res.status(500).json({ message: "Failed to upload receipt to Google Drive" });
-    }
-  });
-
-  app.get("/api/google-drive/files", async (req, res) => {
-    try {
-      const result = await googleDriveService.listFiles();
-      
-      if (result.success) {
-        res.json({ files: result.files });
-      } else {
-        res.status(500).json({ 
-          message: "Failed to list Google Drive files",
-          error: result.error 
-        });
-      }
-    } catch (error) {
-      console.error("Google Drive list files error:", error);
-      res.status(500).json({ message: "Failed to list Google Drive files" });
-    }
-  });
-
   // Quotes
   app.get("/api/quotes", async (req, res) => {
     try {
@@ -1165,66 +1057,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching active template by type:", error);
       res.status(500).json({ error: "Failed to fetch active template" });
-    }
-  });
-
-  // PDF Generation endpoint
-  app.post("/api/generate-pdf", async (req, res) => {
-    try {
-      const { type, entityId } = req.body;
-      
-      if (!type || !entityId) {
-        return res.status(400).json({ message: "Type and entity ID are required" });
-      }
-
-      let entityData: any = null;
-      let pdfData: any = {};
-
-      // Get entity data based on type
-      if (type === 'receipt') {
-        // For receipts, we need to get the job data
-        const job = await storage.getJob(entityId);
-        if (!job) {
-          return res.status(404).json({ message: "Job not found" });
-        }
-        entityData = job;
-        pdfData = {
-          documentType: 'receipt',
-          documentNumber: `RCP-${Date.now()}`,
-          documentDate: new Date(),
-          job: entityData
-        };
-      } else if (type === 'quote') {
-        const quote = await storage.getQuote(entityId);
-        if (!quote) {
-          return res.status(404).json({ message: "Quote not found" });
-        }
-        entityData = quote;
-        pdfData = {
-          documentType: 'quote',
-          documentNumber: entityData.quoteNumber,
-          documentDate: entityData.createdAt,
-          quote: entityData
-        };
-      } else {
-        return res.status(400).json({ message: "Invalid document type" });
-      }
-
-      // Get business settings and template
-      const businessSettings = await storage.getBusinessSettings();
-      const template = await storage.getActiveCustomTemplateByType(type);
-
-      // Return PDF data for frontend generation
-      res.json({
-        success: true,
-        pdfData: pdfData,
-        businessSettings: businessSettings,
-        template: template
-      });
-
-    } catch (error) {
-      console.error("PDF generation error:", error);
-      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 
