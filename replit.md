@@ -27,12 +27,17 @@ Preferred communication style: Simple, everyday language.
 - **COMPLETED: Searchable customer/vehicle selection** - Replaced dropdowns with search interface for better UX with many customers
 - **COMPLETED: Future job preservation** - Daily cleanup preserves jobs with future scheduled dates
 - **COMPLETED: Time slot selection** - Dropdown with 30-minute intervals (8:00, 8:30, etc.) for easier scheduling
+- **COMPLETED: Comprehensive list sorting** - All lists now show newest items first (jobs, receipts, orders) or alphabetical order (customers, vehicles, inventory)
+- **COMPLETED: Receipt deletion functionality** - Added delete buttons for all receipt types with proper error handling and user feedback
+- **COMPLETED: PDF functionality fixes** - Preview and download now work correctly across all document types with proper API parameter handling
 - Replaced manual parts price entry with inventory-based part selection system
 - Search shows real-time filtering with stock levels and pricing information
 - New part creation pre-fills with search term and integrates seamlessly with inventory system
 - Job status workflow now includes PDF generation at appropriate stages
 - Job numbers display prominently in blue below job titles for easy tracking
 - Zero stock items highlighted in red for immediate visibility
+- Receipt management system with complete CRUD operations including safe deletion with confirmations
+- Optimized list ordering for better user experience across all data views
 
 ### Complete PDF Template Customization System (July 2025)
 - Built comprehensive PDF template editor with live preview functionality
