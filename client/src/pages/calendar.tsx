@@ -83,8 +83,11 @@ function JobCard({ job, onEdit, onMove }: JobCardProps) {
   );
 }
 
+type ViewMode = 'day' | 'week' | 'month';
+
 export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [isServiceBayDialogOpen, setIsServiceBayDialogOpen] = useState(false);
   const [selectedBayForEdit, setSelectedBayForEdit] = useState<ServiceBay | undefined>();
   const { toast } = useToast();
@@ -191,7 +194,15 @@ export default function Calendar() {
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    } else if (viewMode === 'month') {
+      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    }
+    
     setSelectedDate(newDate);
   };
 
@@ -204,6 +215,32 @@ export default function Calendar() {
           <p className="text-gray-600">Interactive scheduling with service bays and time slots</p>
         </div>
         <div className="flex items-center space-x-4">
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            <Button 
+              variant={viewMode === 'day' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('day')}
+              className="rounded-none border-r"
+            >
+              Day
+            </Button>
+            <Button 
+              variant={viewMode === 'week' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('week')}
+              className="rounded-none border-r"
+            >
+              Week
+            </Button>
+            <Button 
+              variant={viewMode === 'month' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('month')}
+              className="rounded-none"
+            >
+              Month
+            </Button>
+          </div>
           <Button 
             variant="outline" 
             onClick={() => setSelectedDate(new Date())}
@@ -256,7 +293,6 @@ export default function Calendar() {
           {/* Header Row */}
           <div className="border-b bg-gray-50 flex">
             <div className="w-24 border-r p-3 font-medium text-sm">Time</div>
-            <div className="w-32 border-r p-3 font-medium text-sm">Unassigned</div>
             {serviceBays.map((bay) => (
               <div key={bay.id} className="flex-1 border-r last:border-r-0 p-3 flex items-center justify-between">
                 <div>
@@ -301,22 +337,6 @@ export default function Calendar() {
                 {/* Time Column */}
                 <div className="w-24 border-r p-2 text-sm font-medium text-gray-600 flex items-start">
                   {timeSlot}
-                </div>
-                
-                {/* Unassigned Column */}
-                <div 
-                  className="w-32 border-r p-2 min-h-16"
-                  onDrop={(e) => handleDrop(e, null, timeSlot)}
-                  onDragOver={handleDragOver}
-                >
-                  {getJobsForSlot(null, timeSlot).map((job) => (
-                    <JobCard 
-                      key={job.id} 
-                      job={job} 
-                      onEdit={() => {}} 
-                      onMove={() => {}}
-                    />
-                  ))}
                 </div>
 
                 {/* Service Bay Columns */}
