@@ -276,6 +276,15 @@ export default function Receipts() {
                               <Download className="w-4 h-4 mr-1" />
                               Download
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteReceiptMutation.mutate(jobToReceiptMap.get(job.id))}
+                              className="text-red-600 hover:text-red-700 border-red-300"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
                           </>
                         ) : (
                           <span className="text-gray-500 text-sm">No receipt available</span>
@@ -358,6 +367,15 @@ export default function Receipts() {
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deleteQuoteMutation.mutate(doc.id)}
+                                className="text-red-600 hover:text-red-700 border-red-300"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -421,6 +439,15 @@ export default function Receipts() {
                               >
                                 <Download className="w-4 h-4 mr-1" />
                                 PDF
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deleteQuoteMutation.mutate(doc.id)}
+                                className="text-red-600 hover:text-red-700 border-red-300"
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
                               </Button>
                             </div>
                           </TableCell>
