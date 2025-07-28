@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Settings, Edit, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -131,18 +132,51 @@ export default function Calendar() {
     },
   });
 
-  // Filter jobs for selected date
-  const todaysJobs = jobs.filter(job => {
+  // Get date range based on view mode
+  const getDateRange = () => {
+    const start = new Date(selectedDate);
+    const end = new Date(selectedDate);
+    
+    if (viewMode === 'day') {
+      // Just today
+      return { start, end };
+    } else if (viewMode === 'week') {
+      // Start of week (Monday) to end of week (Sunday)
+      const dayOfWeek = start.getDay();
+      const diff = start.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Monday start
+      start.setDate(diff);
+      end.setDate(diff + 6);
+      return { start, end };
+    } else if (viewMode === 'month') {
+      // Start of month to end of month
+      start.setDate(1);
+      end.setMonth(end.getMonth() + 1);
+      end.setDate(0); // Last day of current month
+      return { start, end };
+    }
+    return { start, end };
+  };
+
+  // Filter jobs for selected date range
+  const { start: rangeStart, end: rangeEnd } = getDateRange();
+  const filteredJobs = jobs.filter(job => {
     if (!job.scheduledDate) return false;
     const jobDate = new Date(job.scheduledDate);
-    return jobDate.toDateString() === selectedDate.toDateString();
+    jobDate.setHours(0, 0, 0, 0);
+    rangeStart.setHours(0, 0, 0, 0);
+    rangeEnd.setHours(23, 59, 59, 999);
+    return jobDate >= rangeStart && jobDate <= rangeEnd;
   });
 
-  // Get jobs for specific bay and time slot
-  const getJobsForSlot = (bayId: string | null, timeSlot: string) => {
-    return todaysJobs.filter(job => 
-      job.serviceBayId === bayId && job.scheduledStartTime === timeSlot
-    );
+  // Get jobs for specific bay and time slot (for day view)
+  const getJobsForSlot = (bayId: string | null, timeSlot: string, date?: Date) => {
+    const targetDate = date || selectedDate;
+    return filteredJobs.filter(job => {
+      if (!job.scheduledDate) return false;
+      const jobDate = new Date(job.scheduledDate);
+      const isSameDate = jobDate.toDateString() === targetDate.toDateString();
+      return isSameDate && job.serviceBayId === bayId && job.scheduledStartTime === timeSlot;
+    });
   };
 
   // Handle job drop
@@ -184,12 +218,23 @@ export default function Calendar() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    if (viewMode === 'day') {
+      return date.toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } else if (viewMode === 'week') {
+      const { start, end } = getDateRange();
+      return `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    } else if (viewMode === 'month') {
+      return date.toLocaleDateString('en-GB', { 
+        year: 'numeric', 
+        month: 'long' 
+      });
+    }
+    return date.toLocaleDateString('en-GB');
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -330,36 +375,154 @@ export default function Calendar() {
             ))}
           </div>
 
-          {/* Time Slots */}
+          {/* Content based on view mode */}
           <div className="flex-1 overflow-y-auto">
-            {TIME_SLOTS.map((timeSlot) => (
-              <div key={timeSlot} className="border-b flex min-h-16">
-                {/* Time Column */}
-                <div className="w-24 border-r p-2 text-sm font-medium text-gray-600 flex items-start">
-                  {timeSlot}
-                </div>
+            {viewMode === 'day' && (
+              <>
+                {TIME_SLOTS.map((timeSlot) => (
+                  <div key={timeSlot} className="border-b flex min-h-16">
+                    {/* Time Column */}
+                    <div className="w-24 border-r p-2 text-sm font-medium text-gray-600 flex items-start">
+                      {timeSlot}
+                    </div>
 
-                {/* Service Bay Columns */}
-                {serviceBays.map((bay) => (
-                  <div 
-                    key={bay.id}
-                    className="flex-1 border-r last:border-r-0 p-2 min-h-16"
-                    onDrop={(e) => handleDrop(e, bay.id, timeSlot)}
-                    onDragOver={handleDragOver}
-                    style={{ backgroundColor: `${bay.color}10` }}
-                  >
-                    {getJobsForSlot(bay.id, timeSlot).map((job) => (
-                      <JobCard 
-                        key={job.id} 
-                        job={job} 
-                        onEdit={() => {}} 
-                        onMove={() => {}}
-                      />
+                    {/* Service Bay Columns */}
+                    {serviceBays.map((bay) => (
+                      <div 
+                        key={bay.id}
+                        className="flex-1 border-r last:border-r-0 p-2 min-h-16"
+                        onDrop={(e) => handleDrop(e, bay.id, timeSlot)}
+                        onDragOver={handleDragOver}
+                      >
+                        {getJobsForSlot(bay.id, timeSlot).map((job) => (
+                          <JobCard 
+                            key={job.id} 
+                            job={job} 
+                            onEdit={() => {}} 
+                            onMove={() => {}}
+                          />
+                        ))}
+                      </div>
                     ))}
                   </div>
                 ))}
+              </>
+            )}
+
+            {viewMode === 'week' && (
+              <div className="grid grid-cols-8 gap-0 min-h-full">
+                {/* Days header */}
+                <div className="border-r p-2 text-sm font-medium text-gray-600">Bay/Day</div>
+                {Array.from({ length: 7 }, (_, i) => {
+                  const date = new Date(getDateRange().start);
+                  date.setDate(date.getDate() + i);
+                  return (
+                    <div key={i} className="border-r last:border-r-0 p-2 text-center text-sm font-medium text-gray-600">
+                      <div>{date.toLocaleDateString('en-GB', { weekday: 'short' })}</div>
+                      <div className="text-xs">{date.getDate()}</div>
+                    </div>
+                  );
+                })}
+                
+                {/* Service bay rows */}
+                {serviceBays.map((bay) => (
+                  <React.Fragment key={bay.id}>
+                    <div className="border-r border-b p-2 text-sm font-medium flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded" 
+                        style={{ backgroundColor: bay.color || "#3B82F6" }}
+                      />
+                      {bay.name}
+                    </div>
+                    {Array.from({ length: 7 }, (_, i) => {
+                      const date = new Date(getDateRange().start);
+                      date.setDate(date.getDate() + i);
+                      const dayJobs = filteredJobs.filter(job => {
+                        if (!job.scheduledDate) return false;
+                        const jobDate = new Date(job.scheduledDate);
+                        return jobDate.toDateString() === date.toDateString() && job.serviceBayId === bay.id;
+                      });
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className="border-r last:border-r-0 border-b p-1 min-h-20"
+                          onDrop={(e) => handleDrop(e, bay.id, "09:00")}
+                          onDragOver={handleDragOver}
+                        >
+                          {dayJobs.map((job) => (
+                            <JobCard 
+                              key={job.id} 
+                              job={job} 
+                              onEdit={() => {}} 
+                              onMove={() => {}}
+                            />
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </div>
-            ))}
+            )}
+
+            {viewMode === 'month' && (
+              <div className="p-4">
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Month days header */}
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div key={day} className="text-center text-sm font-medium text-gray-600 p-2">
+                      {day}
+                    </div>
+                  ))}
+                  
+                  {/* Month calendar */}
+                  {Array.from({ length: 42 }, (_, i) => {
+                    const { start } = getDateRange();
+                    const firstDayOfMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+                    const startOfCalendar = new Date(firstDayOfMonth);
+                    const dayOfWeek = firstDayOfMonth.getDay();
+                    startOfCalendar.setDate(firstDayOfMonth.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                    
+                    const currentDate = new Date(startOfCalendar);
+                    currentDate.setDate(startOfCalendar.getDate() + i);
+                    
+                    const isCurrentMonth = currentDate.getMonth() === start.getMonth();
+                    const isToday = currentDate.toDateString() === new Date().toDateString();
+                    
+                    const dayJobs = filteredJobs.filter(job => {
+                      if (!job.scheduledDate) return false;
+                      const jobDate = new Date(job.scheduledDate);
+                      return jobDate.toDateString() === currentDate.toDateString();
+                    });
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className={`border rounded p-2 min-h-24 ${
+                          isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'
+                        } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+                      >
+                        <div className="text-sm font-medium mb-1">{currentDate.getDate()}</div>
+                        <div className="space-y-1">
+                          {dayJobs.slice(0, 3).map((job) => (
+                            <div 
+                              key={job.id} 
+                              className="text-xs p-1 rounded bg-blue-100 text-blue-800 truncate"
+                            >
+                              {job.customer.name}
+                            </div>
+                          ))}
+                          {dayJobs.length > 3 && (
+                            <div className="text-xs text-gray-500">+{dayJobs.length - 3} more</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
