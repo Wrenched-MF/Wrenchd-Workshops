@@ -3,10 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#22c55e" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WRENCH'D">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Professional mobile mechanic workshop management system for WRENCH'D Auto Repairs. Manage customers, jobs, inventory, and scheduling.">
+    <meta name="keywords" content="mobile mechanic, auto repair, workshop management, WRENCH'D, automotive service">
+    <meta name="author" content="WRENCH'D Auto Repairs">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="WRENCH'D Workshop Manager">
+    <meta property="og:description" content="Professional mobile mechanic workshop management system">
+    <meta property="og:image" content="/logo.png">
+    <meta property="og:url" content="/">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WRENCH'D Workshop Manager">
+    <meta name="twitter:description" content="Professional mobile mechanic workshop management system">
+    <meta name="twitter:image" content="/logo.png">
+    
+    <title>WRENCH'D Workshop Manager - Professional Auto Repair Management</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+    
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>

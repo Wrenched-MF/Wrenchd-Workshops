@@ -18,6 +18,7 @@ import Archives from "@/pages/archives";
 import Settings from "@/pages/settings";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import PWAInstallPrompt from "@/components/pwa-install-prompt";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <PWAInstallPrompt />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>

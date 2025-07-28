@@ -32,12 +32,10 @@ export default function Sidebar() {
     <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-screen">
       {/* Logo Header */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-wrench-green rounded flex items-center justify-center">
-            <Wrench className="w-4 h-4 text-white" />
-          </div>
+        <div className="flex items-center space-x-3">
+          <img src="/icon-192.png" alt="WRENCH'D Logo" className="w-10 h-10 rounded" />
           <div>
-            <h1 className="font-bold text-gray-900">WRENCH'D</h1>
+            <h1 className="font-bold text-gray-900 text-lg">WRENCH'D</h1>
             <p className="text-xs text-gray-500">Workshop Manager</p>
           </div>
         </div>
