@@ -30,9 +30,10 @@ interface JobCardProps {
   job: JobWithDetails;
   onEdit: (job: JobWithDetails) => void;
   onMove: (job: JobWithDetails, newBayId: string | null, newTime: string) => void;
+  onDelete: (jobId: string) => void;
 }
 
-function JobCard({ job, onEdit, onMove }: JobCardProps) {
+function JobCard({ job, onEdit, onMove, onDelete }: JobCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   
   const dragStartHandler = (e: React.DragEvent) => {
@@ -64,22 +65,36 @@ function JobCard({ job, onEdit, onMove }: JobCardProps) {
       draggable
       onDragStart={dragStartHandler}
       onDragEnd={dragEndHandler}
-      onClick={() => onEdit(job)}
-      className={`p-2 mb-1 rounded border cursor-move hover:shadow-md transition-all duration-200 ${getJobColor()} ${
+      className={`p-2 mb-1 rounded border cursor-move hover:shadow-md transition-all duration-200 group ${getJobColor()} ${
         isDragging ? 'opacity-50 transform rotate-2' : ''
       }`}
     >
-      <div className="font-medium text-xs mb-1">{job.customer.name}</div>
-      <div className="text-xs text-gray-600 mb-1">
-        {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
-      </div>
-      <div className="text-xs font-medium">{job.title}</div>
-      {job.scheduledStartTime && job.scheduledEndTime && (
-        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {job.scheduledStartTime} - {job.scheduledEndTime}
+      <div className="flex items-start justify-between">
+        <div className="flex-1" onClick={() => onEdit(job)}>
+          <div className="font-medium text-xs mb-1">{job.customer.name}</div>
+          <div className="text-xs text-gray-600 mb-1">
+            {job.vehicle.year} {job.vehicle.make} {job.vehicle.model}
+          </div>
+          <div className="text-xs font-medium">{job.title}</div>
+          {job.scheduledStartTime && job.scheduledEndTime && (
+            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {job.scheduledStartTime} - {job.scheduledEndTime}
+            </div>
+          )}
         </div>
-      )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(job.id);
+          }}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-red-600 hover:text-red-700"
+        >
+          <Trash2 className="w-3 h-3" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -118,6 +133,18 @@ export default function Calendar() {
     onError: (error) => {
       console.error("Job update failed:", error);
       toast({ title: "Failed to move job", variant: "destructive" });
+    },
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: (jobId: string) => apiRequest(`/api/jobs/${jobId}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/service-bays"] });
+      toast({ title: "Job deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete job", variant: "destructive" });
     },
   });
 
@@ -400,6 +427,7 @@ export default function Calendar() {
                             job={job} 
                             onEdit={() => {}} 
                             onMove={() => {}}
+                            onDelete={(jobId) => deleteJobMutation.mutate(jobId)}
                           />
                         ))}
                       </div>
@@ -456,6 +484,7 @@ export default function Calendar() {
                               job={job} 
                               onEdit={() => {}} 
                               onMove={() => {}}
+                              onDelete={(jobId) => deleteJobMutation.mutate(jobId)}
                             />
                           ))}
                         </div>
