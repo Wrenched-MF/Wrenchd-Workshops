@@ -2,7 +2,3 @@
   "schemaVersion": 2,
   "templateId": "node/18"
 }
-
-git add captain-definition
-git commit -m "Add captain-definition for CapRover deploy"
-git push origin main
